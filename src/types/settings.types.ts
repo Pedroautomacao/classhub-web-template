@@ -10,5 +10,6 @@ export interface SchoolSettings extends LandingPageData {
   id: string
   semester_start: string | null
   semester_end: string | null
+  level_options: string[] | null
   updated_at: string
 }

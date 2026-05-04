@@ -1,13 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Paper, Stack, Typography, TextField, Button,
-  CircularProgress, Alert, Grid, Divider,
+  CircularProgress, Alert, Grid, Divider, Chip, IconButton,
+  InputAdornment,
 } from '@mui/material'
-import { Save, UploadFile, Delete } from '@mui/icons-material'
+import { Save, UploadFile, Delete, Add } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
 import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -29,6 +30,7 @@ export function SettingsPage() {
   const qc = useQueryClient()
   const { show } = useSnackbarStore()
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const [newLevel, setNewLevel] = useState('')
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -40,6 +42,7 @@ export function SettingsPage() {
   })
 
   const welcomeImage = watch('welcome_image')
+  const levelOptions = settings?.level_options ?? []
 
   useEffect(() => {
     if (settings) {
@@ -65,6 +68,14 @@ export function SettingsPage() {
     onError: (error) => show(getApiError(error, 'Erro ao salvar configurações.'), 'error'),
   })
 
+  const levelMutation = useMutation({
+    mutationFn: settingsApi.update,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['settings'] })
+    },
+    onError: (error) => show(getApiError(error, 'Erro ao atualizar níveis.'), 'error'),
+  })
+
   const onSubmit = (values: FormValues) => {
     mutation.mutate({
       school_name: values.school_name,
@@ -75,6 +86,17 @@ export function SettingsPage() {
       whatsapp: values.whatsapp || undefined,
       instagram: values.instagram || undefined,
     })
+  }
+
+  const handleAddLevel = () => {
+    const trimmed = newLevel.trim()
+    if (!trimmed || levelOptions.includes(trimmed)) return
+    levelMutation.mutate({ level_options: [...levelOptions, trimmed] })
+    setNewLevel('')
+  }
+
+  const handleRemoveLevel = (level: string) => {
+    levelMutation.mutate({ level_options: levelOptions.filter((l) => l !== level) })
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,121 +116,178 @@ export function SettingsPage() {
         title="Configurações da Escola"
         subtitle="Gerencie as informações e aparência da escola"
         helpContent={{
-          what: 'A tela de Configurações controla as informações globais da escola exibidas no sistema e nos formulários públicos: nome, texto de boas-vindas, imagem da landing page, datas do semestre e redes sociais.',
+          what: 'A tela de Configurações controla as informações globais da escola exibidas no sistema e nos formulários públicos: nome, texto de boas-vindas, imagem da landing page, datas do semestre, redes sociais e os níveis de idioma disponíveis.',
           actions: [
             'Atualizar o nome oficial da escola (aparece na landing page e nos formulários)',
             'Personalizar o texto e a imagem de boas-vindas da landing page pública',
             'Definir as datas de início e fim do semestre atual',
             'Configurar links de WhatsApp e Instagram exibidos publicamente',
+            'Gerenciar os níveis de idioma disponíveis para classificar alunos e turmas',
           ],
           tips: [
-            'O nome da escola configurado aqui é exibido em todas as telas do sistema para os usuários logados.',
+            'O nome da escola configurado aqui é exibido em todas as telas do sistema.',
             'A imagem de boas-vindas aparece na hero section da landing page — use uma imagem de boa qualidade (mínimo 1200px de largura).',
-            'Atualize as datas do semestre no início de cada período para manter o sistema alinhado com o calendário escolar.',
+            'Um nível de idioma só pode ser removido se não estiver em uso por nenhum aluno ou turma.',
           ],
           flow: 'Configure aqui antes de lançar o sistema → Revise no início de cada semestre → Qualquer alteração reflete imediatamente nas telas públicas.',
         }}
       />
-      <Paper sx={{ p: { xs: 3, md: 4 }, maxWidth: 700 }}>
-        <Stack component="form" onSubmit={handleSubmit(onSubmit)} spacing={3}>
-          {mutation.isError && <Alert severity="error">Erro ao salvar. Tente novamente.</Alert>}
+      <Stack spacing={3} sx={{ maxWidth: 700 }}>
+        <Paper sx={{ p: { xs: 3, md: 4 } }}>
+          <Stack component="form" onSubmit={handleSubmit(onSubmit)} spacing={3}>
+            {mutation.isError && <Alert severity="error">Erro ao salvar. Tente novamente.</Alert>}
 
-          <Typography variant="subtitle1" fontWeight={600} color="primary">Informações Gerais</Typography>
-          <TextField label="Nome da escola *" fullWidth error={!!errors.school_name} helperText={errors.school_name?.message} {...register('school_name')} />
+            <Typography variant="subtitle1" fontWeight={600} color="primary">Informações Gerais</Typography>
+            <TextField label="Nome da escola *" fullWidth error={!!errors.school_name} helperText={errors.school_name?.message} {...register('school_name')} />
 
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Início do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_start')} />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField label="Início do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_start')} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField label="Fim do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_end')} />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Fim do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_end')} />
-            </Grid>
-          </Grid>
 
-          <Divider />
-          <Typography variant="subtitle1" fontWeight={600} color="primary">Landing Page</Typography>
-          <TextField label="Texto de boas-vindas" multiline rows={3} fullWidth {...register('welcome_text')} />
+            <Divider />
+            <Typography variant="subtitle1" fontWeight={600} color="primary">Landing Page</Typography>
+            <TextField label="Texto de boas-vindas" multiline rows={3} fullWidth {...register('welcome_text')} />
 
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="WhatsApp"
-                fullWidth
-                placeholder="5511999999999"
-                helperText="Número com DDI e DDD, sem espaços ou símbolos"
-                {...register('whatsapp')}
-              />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="WhatsApp"
+                  fullWidth
+                  placeholder="5511999999999"
+                  helperText="Número com DDI e DDD, sem espaços ou símbolos"
+                  {...register('whatsapp')}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Instagram"
+                  fullWidth
+                  placeholder="@escolaclasshub"
+                  helperText="Usuário com ou sem @"
+                  {...register('instagram')}
+                />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="Instagram"
-                fullWidth
-                placeholder="@fluentflow"
-                helperText="Usuário com ou sem @"
-                {...register('instagram')}
-              />
-            </Grid>
-          </Grid>
 
-          {/* Imagem de boas-vindas */}
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={handleImageChange}
-          />
-          <Controller
-            name="welcome_image"
-            control={control}
-            render={() => (
-              <Box>
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  Imagem de boas-vindas
-                </Typography>
-                {welcomeImage ? (
-                  <Stack spacing={1}>
-                    <Box
-                      component="img"
-                      src={welcomeImage}
-                      alt="Imagem de boas-vindas"
-                      sx={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
-                    />
-                    <Stack direction="row" spacing={1}>
-                      <Button
-                        size="small" variant="outlined" startIcon={<UploadFile />}
-                        onClick={() => imageInputRef.current?.click()}
-                      >
-                        Substituir
-                      </Button>
-                      <Button
-                        size="small" variant="outlined" color="error" startIcon={<Delete />}
-                        onClick={() => setValue('welcome_image', '', { shouldDirty: true })}
-                      >
-                        Remover
-                      </Button>
+            {/* Imagem de boas-vindas */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageChange}
+            />
+            <Controller
+              name="welcome_image"
+              control={control}
+              render={() => (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" mb={1}>
+                    Imagem de boas-vindas
+                  </Typography>
+                  {welcomeImage ? (
+                    <Stack spacing={1}>
+                      <Box
+                        component="img"
+                        src={welcomeImage}
+                        alt="Imagem de boas-vindas"
+                        sx={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                      />
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small" variant="outlined" startIcon={<UploadFile />}
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          Substituir
+                        </Button>
+                        <Button
+                          size="small" variant="outlined" color="error" startIcon={<Delete />}
+                          onClick={() => setValue('welcome_image', '', { shouldDirty: true })}
+                        >
+                          Remover
+                        </Button>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                ) : (
-                  <Button variant="outlined" startIcon={<UploadFile />} onClick={() => imageInputRef.current?.click()}>
-                    Fazer upload da imagem
-                  </Button>
-                )}
+                  ) : (
+                    <Button variant="outlined" startIcon={<UploadFile />} onClick={() => imageInputRef.current?.click()}>
+                      Fazer upload da imagem
+                    </Button>
+                  )}
+                </Box>
+              )}
+            />
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                type="submit" variant="contained" startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : <Save />}
+                disabled={mutation.isPending || !isDirty}
+              >
+                {mutation.isPending ? 'Salvando...' : 'Salvar Configurações'}
+              </Button>
+            </Box>
+          </Stack>
+        </Paper>
+
+        {/* Níveis de idioma */}
+        <Paper sx={{ p: { xs: 3, md: 4 } }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} color="primary">Níveis de Idioma</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Opções disponíveis para classificar alunos e turmas. Um nível só pode ser removido se não estiver em uso.
+              </Typography>
+            </Box>
+
+            {levelOptions.length > 0 ? (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {levelOptions.map((level) => (
+                  <Chip
+                    key={level}
+                    label={level}
+                    onDelete={() => handleRemoveLevel(level)}
+                    disabled={levelMutation.isPending}
+                    variant="outlined"
+                  />
+                ))}
               </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                Nenhum nível cadastrado ainda.
+              </Typography>
             )}
-          />
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              type="submit" variant="contained" startIcon={mutation.isPending ? <CircularProgress size={18} color="inherit" /> : <Save />}
-              disabled={mutation.isPending || !isDirty}
-            >
-              {mutation.isPending ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
-          </Box>
-        </Stack>
-      </Paper>
-
+            <TextField
+              label="Adicionar nível"
+              size="small"
+              placeholder="Ex: A1, B2, Iniciante..."
+              value={newLevel}
+              onChange={(e) => setNewLevel(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddLevel() } }}
+              sx={{ maxWidth: 340 }}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={handleAddLevel}
+                        disabled={!newLevel.trim() || levelMutation.isPending}
+                      >
+                        <Add fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Stack>
+        </Paper>
+      </Stack>
     </Box>
   )
 }
