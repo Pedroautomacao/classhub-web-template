@@ -8,7 +8,6 @@ import {
   ListItemText,
   Typography,
   Divider,
-  useTheme,
 } from '@mui/material'
 import {
   Dashboard,
@@ -68,7 +67,6 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, onMobileClose, desktopOpen = true }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const theme = useTheme()
   const { hasPermission } = usePermission()
   const user = useAuthStore((s) => s.user)
 
