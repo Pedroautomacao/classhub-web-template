@@ -25,4 +25,7 @@ export const levelingApi = {
 
   updateStatus: (id: string, data: LevelingStatusUpdate) =>
     api.patch<LevelingFormResponse>(`/leveling/${id}/status`, data).then((r) => r.data),
+
+  getLevels: () =>
+    api.get<string[]>('/leveling/levels').then((r) => r.data),
 }

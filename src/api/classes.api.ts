@@ -15,6 +15,7 @@ export interface ClassPayload {
   frequency: string
   student_ids?: string[]
   meeting_link?: string | null
+  levels?: string[] | null
 }
 
 export interface ClassListParams {

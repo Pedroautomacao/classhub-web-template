@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -19,13 +19,20 @@ import {
   Typography,
   Box,
   Tooltip,
+  Autocomplete,
 } from '@mui/material'
 import { Download, InsertDriveFile } from '@mui/icons-material'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 import { contractsApi } from '@/api/contracts.api'
 import { filesApi, downloadBase64File } from '@/api/files.api'
+import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import type { Student, AvailabilityDay } from '@/types'
+
+function maskCpf(cpf: string) {
+  const d = cpf.replace(/\D/g, '')
+  return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+}
 
 const schema = z.object({
   full_name: z.string().min(2, 'Nome obrigatório'),
@@ -35,11 +42,19 @@ const schema = z.object({
   cpf: z.string().optional(),
   birth_date: z.string().optional(),
   availability: z.array(availabilityDaySchema).optional(),
+  level: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
 
-type SubmitValues = Omit<FormValues, 'availability'> & { availability?: AvailabilityDay[] | null }
+type SubmitValues = Omit<FormValues, 'availability' | 'email' | 'phone' | 'instagram' | 'birth_date' | 'level'> & {
+  email?: string | null
+  phone?: string | null
+  instagram?: string | null
+  birth_date?: string | null
+  availability?: AvailabilityDay[] | null
+  level?: string | null
+}
 
 interface Props {
   open: boolean
@@ -58,6 +73,12 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
     resolver: zodResolver(schema),
   })
 
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsApi.get,
+  })
+  const availableLevels = settingsData?.level_options ?? []
+
   useEffect(() => {
     if (open && student) {
       reset({
@@ -65,9 +86,10 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
         email: student.email ?? '',
         phone: student.phone ?? '',
         instagram: student.instagram ?? '',
-        cpf: student.cpf ?? '',
+        cpf: student.cpf ? maskCpf(student.cpf) : '',
         birth_date: student.birth_date ?? '',
         availability: student.availability ?? [],
+        level: student.level ?? '',
       })
     }
   }, [open, student, reset])
@@ -96,7 +118,12 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
       <DialogContent>
         <Stack component="form" id="student-form" onSubmit={handleSubmit((values) => onSubmit({
           ...values,
+          email: values.email || null,
+          phone: values.phone || null,
+          instagram: values.instagram || null,
+          birth_date: values.birth_date || null,
           availability: values.availability?.length ? values.availability : null,
+          level: values.level || null,
         }))} spacing={2} sx={{ pt: 1 }}>
           <TextField
             label="Nome completo *"
@@ -132,6 +159,22 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
                 fullWidth
                 slotProps={{ inputLabel: { shrink: true } }}
                 {...register('birth_date')}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="level"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={availableLevels}
+                    value={field.value ?? ''}
+                    onChange={(_, v) => field.onChange(v ?? '')}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Nível" placeholder="Selecionar nível..." />
+                    )}
+                  />
+                )}
               />
             </Grid>
           </Grid>

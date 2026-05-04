@@ -12,6 +12,7 @@ export interface StudentUpdate {
   payment_method?: string | null
   payment_day?: number | null
   availability?: AvailabilityDay[] | null
+  level?: string | null
   contract_accepted?: boolean
 }
 

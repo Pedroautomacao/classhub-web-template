@@ -22,6 +22,7 @@ export interface Class {
   class_type: ClassType
   frequency: ClassFrequency
   meeting_link: string | null
+  levels: string[] | null
   students: ClassStudent[]
   created_at: string
   updated_at: string

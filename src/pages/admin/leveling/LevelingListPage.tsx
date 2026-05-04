@@ -11,6 +11,7 @@ import dayjs from 'dayjs'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable, type Column } from '@/components/common/DataTable'
 import { levelingApi } from '@/api/leveling.api'
+import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
@@ -56,6 +57,12 @@ export function LevelingListPage() {
   const [newStatus, setNewStatus] = useState<ContactStatus>('analyze')
   const [levelResult, setLevelResult] = useState('')
   const [recommendation, setRecommendation] = useState('')
+
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsApi.get,
+  })
+  const levelOptions = settingsData?.level_options ?? []
 
   const { data: forms = [], isLoading } = useQuery({
     queryKey: ['leveling', statusFilter, nameFilter, phoneFilter],
@@ -233,7 +240,16 @@ export function LevelingListPage() {
             <TextField select label="Status" fullWidth value={newStatus} onChange={(e) => setNewStatus(e.target.value as ContactStatus)}>
               {Object.entries(CONTACT_STATUS_LABELS).map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
             </TextField>
-            <TextField label="Resultado do nivelamento" fullWidth value={levelResult} onChange={(e) => setLevelResult(e.target.value)} />
+            <TextField
+              select
+              label="Resultado do nivelamento"
+              fullWidth
+              value={levelResult}
+              onChange={(e) => setLevelResult(e.target.value)}
+            >
+              <MenuItem value="">— Nenhum —</MenuItem>
+              {levelOptions.map((l) => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+            </TextField>
             <TextField label="Recomendação" fullWidth multiline rows={2} value={recommendation} onChange={(e) => setRecommendation(e.target.value)} />
           </Stack>
         </DialogContent>

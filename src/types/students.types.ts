@@ -15,6 +15,7 @@ export interface Student {
   payment_method: PaymentMethod | null
   payment_day: number | null
   availability: AvailabilityDay[] | null
+  level: string | null
   contract_accepted: boolean
   status: StudentStatus
   created_at: string

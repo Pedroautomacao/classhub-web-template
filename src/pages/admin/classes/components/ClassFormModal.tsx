@@ -8,10 +8,11 @@ import {
   useMediaQuery, useTheme, Alert, Autocomplete, Tooltip,
   Typography, IconButton, Box, Divider,
 } from '@mui/material'
-import { Warning, Add, Delete } from '@mui/icons-material'
+import { Warning, Add, Delete, Error } from '@mui/icons-material'
 import { useQuery } from '@tanstack/react-query'
 import { teachersApi } from '@/api/teachers.api'
 import { studentsApi } from '@/api/students.api'
+import { settingsApi } from '@/api/settings.api'
 import { studentMatchesClass, teacherMatchesClass, DAYS } from '@/utils/availability'
 import type { Class } from '@/types'
 
@@ -30,6 +31,7 @@ const schema = z.object({
   frequency: z.enum(['weekly', 'biweekly']),
   student_ids: z.array(z.string()).optional(),
   meeting_link: z.string().url('URL inválida').optional().or(z.literal('')),
+  levels: z.array(z.string()).optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -49,9 +51,15 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const { data: teachers = [] } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list() })
   const { data: students = [] } = useQuery({ queryKey: ['students'], queryFn: () => studentsApi.list() })
 
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsApi.get,
+  })
+  const availableLevels = settingsData?.level_options ?? []
+
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { schedule: [{ day: 'monday', start_time: '', end_time: '' }] },
+    defaultValues: { schedule: [{ day: 'monday', start_time: '', end_time: '' }], levels: [] },
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'schedule' })
@@ -59,6 +67,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedTeacherId = watch('teacher_id')
   const watchedSchedule = watch('schedule') ?? []
   const watchedStudentIds = watch('student_ids') ?? []
+  const watchedLevels = watch('levels') ?? []
   const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
 
   const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
@@ -66,6 +75,12 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const conflictingStudents = classInfoReady
     ? students.filter(
         (s) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
+      )
+    : []
+
+  const levelMismatchStudents = watchedLevels.length > 0
+    ? students.filter(
+        (s) => watchedStudentIds.includes(s.id) && !!s.level && !watchedLevels.includes(s.level),
       )
     : []
 
@@ -80,6 +95,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             frequency: cls.frequency,
             student_ids: cls.students.map((s) => s.id),
             meeting_link: cls.meeting_link ?? '',
+            levels: cls.levels ?? [],
           }
         : {
             name: '',
@@ -89,6 +105,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             frequency: 'weekly',
             student_ids: [],
             meeting_link: '',
+            levels: [],
           }
       )
     }
@@ -137,6 +154,24 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 error={!!errors.meeting_link}
                 helperText={errors.meeting_link?.message}
                 {...register('meeting_link')}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Controller
+                name="levels"
+                control={control}
+                defaultValue={[]}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={availableLevels}
+                    value={field.value ?? []}
+                    onChange={(_, v) => field.onChange(v)}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Níveis da turma" placeholder="Selecionar níveis..." helperText="Deixe em branco para aceitar qualquer nível" />
+                    )}
+                  />
+                )}
               />
             </Grid>
           </Grid>
@@ -236,6 +271,11 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                           <Warning fontSize="small" color="warning" />
                         </Tooltip>
                       )}
+                      {watchedLevels.length > 0 && option.level && !watchedLevels.includes(option.level) && (
+                        <Tooltip title={`Nível do aluno (${option.level}) não corresponde ao(s) nível(is) da turma`}>
+                          <Error fontSize="small" color="error" />
+                        </Tooltip>
+                      )}
                     </Box>
                   )
                 }}
@@ -248,6 +288,13 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               {conflictingStudents.length === 1
                 ? `${conflictingStudents[0].full_name} não marcou disponibilidade neste turno.`
                 : `${conflictingStudents.map((s) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
+            </Alert>
+          )}
+          {levelMismatchStudents.length > 0 && (
+            <Alert severity="warning">
+              {levelMismatchStudents.length === 1
+                ? `${levelMismatchStudents[0].full_name} tem nível ${levelMismatchStudents[0].level}, diferente do(s) nível(is) da turma.`
+                : `${levelMismatchStudents.map((s) => s.full_name).join(', ')} têm níveis diferentes dos desta turma.`}
             </Alert>
           )}
         </Stack>

@@ -158,10 +158,11 @@ export function ClassesListPage() {
           ],
           tips: [
             'Ao adicionar um aluno com horário conflitante com a turma, o sistema exibe um aviso — você pode ignorá-lo se souber da exceção.',
+            'Defina os níveis de idioma aceitos na turma para que o sistema alerte quando um aluno de nível diferente for adicionado.',
             'O link de reunião pode ser editado diretamente pelo professor no Portal do Professor.',
             'Turmas do tipo "Aula Particular" geralmente têm apenas um aluno.',
           ],
-          flow: 'Cadastro do Professor → Criação da Turma → Adição de Alunos à Turma → O Professor acessa pelo Portal.',
+          flow: 'Cadastro do Professor → Criação da Turma (com níveis) → Adição de Alunos → O Professor acessa pelo Portal.',
         }}
       />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>

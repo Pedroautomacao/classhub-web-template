@@ -18,8 +18,9 @@ import {
   MenuItem,
   Typography,
   Chip,
+  Alert,
 } from '@mui/material'
-import { Edit, PersonOff, PersonAdd, Search, ClassOutlined, Warning } from '@mui/icons-material'
+import { Edit, PersonOff, PersonAdd, Search, ClassOutlined, Warning, Error } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable, type Column } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
@@ -79,6 +80,7 @@ function AddToClassModal({ student, classes, onClose, onConfirm, loading }: AddT
             )}
             {classes.map((c) => {
               const conflict = !studentMatchesClass(student?.availability ?? null, c.schedule)
+              const levelConflict = student?.level && c.levels?.length && !c.levels.includes(student.level)
               return (
                 <MenuItem key={c.id} value={c.id}>
                   <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={1}>
@@ -88,11 +90,27 @@ function AddToClassModal({ student, classes, onClose, onConfirm, loading }: AddT
                         <Warning fontSize="small" color="warning" />
                       </Tooltip>
                     )}
+                    {levelConflict && (
+                      <Tooltip title={`Nível do aluno (${student?.level}) não corresponde ao(s) nível(is) da turma`}>
+                        <Error fontSize="small" color="error" />
+                      </Tooltip>
+                    )}
                   </Stack>
                 </MenuItem>
               )
             })}
           </TextField>
+          {(() => {
+            const selClass = classes.find((c) => c.id === selectedClassId)
+            if (selClass && student?.level && selClass.levels?.length && !selClass.levels.includes(student.level)) {
+              return (
+                <Alert severity="warning">
+                  O nível do aluno ({student.level}) não corresponde ao(s) nível(is) da turma ({selClass.levels.join(', ')}).
+                </Alert>
+              )
+            }
+            return null
+          })()}
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -238,6 +256,7 @@ export function StudentsListPage() {
       align: 'center',
       render: (s) => <StudentStatusChip status={s.status} />,
     },
+    { key: 'level', label: 'Nível', render: (s) => s.level ?? '—' },
     {
       key: 'actions',
       label: '',
@@ -295,10 +314,11 @@ export function StudentsListPage() {
           ],
           tips: [
             'Use o filtro "Sem Turma" para encontrar alunos ativos que ainda precisam ser alocados.',
-            'A disponibilidade do aluno é usada para alertar conflitos ao adicioná-lo a uma turma.',
+            'A disponibilidade e o nível do aluno são usados para alertar conflitos ao adicioná-lo a uma turma.',
+            'O nível é preenchido automaticamente com base no último nivelamento concluído do aluno.',
             'Alunos normalmente chegam via formulário de Matrícula — o cadastro manual é usado para casos especiais.',
           ],
-          flow: 'Formulário de Matrícula → Análise em Matrículas → Conversão para Aluno → Alocação em Turma → Criação de Contrato.',
+          flow: 'Nivelamento → Matrícula (nível herdado automaticamente) → Alocação em Turma compatível → Criação de Contrato.',
         }}
       />
 
