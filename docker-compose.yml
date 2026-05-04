@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  web-template:
+    build: .
+    container_name: classhub_web_template
+    restart: always
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    external: true

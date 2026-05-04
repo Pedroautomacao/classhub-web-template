@@ -1,0 +1,264 @@
+import { useEffect } from 'react'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, Stack, TextField, Grid, MenuItem, CircularProgress,
+  useMediaQuery, useTheme, Alert, Autocomplete, Tooltip,
+  Typography, IconButton, Box, Divider,
+} from '@mui/material'
+import { Warning, Add, Delete } from '@mui/icons-material'
+import { useQuery } from '@tanstack/react-query'
+import { teachersApi } from '@/api/teachers.api'
+import { studentsApi } from '@/api/students.api'
+import { studentMatchesClass, teacherMatchesClass, DAYS } from '@/utils/availability'
+import type { Class } from '@/types'
+
+
+const scheduleEntrySchema = z.object({
+  day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+  start_time: z.string().min(1, 'Obrigatório'),
+  end_time: z.string().min(1, 'Obrigatório'),
+})
+
+const schema = z.object({
+  name: z.string().min(1, 'Nome obrigatório'),
+  teacher_id: z.string().optional(),
+  schedule: z.array(scheduleEntrySchema).min(1, 'Adicione pelo menos um dia'),
+  class_type: z.enum(['grammar', 'conversation', 'private_lesson']),
+  frequency: z.enum(['weekly', 'biweekly']),
+  student_ids: z.array(z.string()).optional(),
+  meeting_link: z.string().url('URL inválida').optional().or(z.literal('')),
+})
+type FormValues = z.infer<typeof schema>
+
+interface Props {
+  open: boolean
+  cls?: Class | null
+  loading?: boolean
+  onClose: () => void
+  onSubmit: (v: FormValues) => void
+}
+
+export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }: Props) {
+  const theme = useTheme()
+  const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
+
+  const isEdit = !!cls
+  const { data: teachers = [] } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list() })
+  const { data: students = [] } = useQuery({ queryKey: ['students'], queryFn: () => studentsApi.list() })
+
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { schedule: [{ day: 'monday', start_time: '', end_time: '' }] },
+  })
+
+  const { fields, append, remove } = useFieldArray({ control, name: 'schedule' })
+
+  const watchedTeacherId = watch('teacher_id')
+  const watchedSchedule = watch('schedule') ?? []
+  const watchedStudentIds = watch('student_ids') ?? []
+  const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
+
+  const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
+
+  const conflictingStudents = classInfoReady
+    ? students.filter(
+        (s) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
+      )
+    : []
+
+  useEffect(() => {
+    if (open) {
+      reset(cls
+        ? {
+            name: cls.name,
+            teacher_id: cls.teacher_id ?? '',
+            schedule: cls.schedule.map((e) => ({ day: e.day, start_time: e.start_time, end_time: e.end_time })),
+            class_type: cls.class_type,
+            frequency: cls.frequency,
+            student_ids: cls.students.map((s) => s.id),
+            meeting_link: cls.meeting_link ?? '',
+          }
+        : {
+            name: '',
+            teacher_id: '',
+            schedule: [{ day: 'monday', start_time: '', end_time: '' }],
+            class_type: 'grammar',
+            frequency: 'weekly',
+            student_ids: [],
+            meeting_link: '',
+          }
+      )
+    }
+  }, [open, cls, reset])
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
+      <DialogTitle>{isEdit ? 'Editar Turma' : 'Nova Turma'}</DialogTitle>
+      <DialogContent sx={{ overflowX: 'hidden' }}>
+        <Stack component="form" id="class-form" onSubmit={handleSubmit(onSubmit)} spacing={2} sx={{ pt: 1 }}>
+          <TextField label="Nome *" fullWidth error={!!errors.name} helperText={errors.name?.message} {...register('name')} />
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField select label="Professor" fullWidth {...register('teacher_id')} defaultValue="">
+                <MenuItem value="">Sem professor</MenuItem>
+                {teachers.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+              </TextField>
+              {selectedTeacher?.is_training && (
+                <Alert severity="warning" sx={{ mt: 1 }}>Este professor está em treinamento.</Alert>
+              )}
+              {selectedTeacher && classInfoReady && !teacherMatchesClass(selectedTeacher.availability, watchedSchedule) && (
+                <Alert severity="warning" sx={{ mt: 1 }}>
+                  O professor não tem disponibilidade cadastrada para este dia/horário.
+                </Alert>
+              )}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField select label="Tipo *" fullWidth {...register('class_type')} defaultValue="grammar">
+                <MenuItem value="grammar">Gramática</MenuItem>
+                <MenuItem value="conversation">Conversação</MenuItem>
+                <MenuItem value="private_lesson">Aula particular</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField select label="Frequência *" fullWidth {...register('frequency')} defaultValue="weekly">
+                <MenuItem value="weekly">Semanal</MenuItem>
+                <MenuItem value="biweekly">Quinzenal</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Link da chamada (Meet, Zoom…)"
+                fullWidth
+                placeholder="https://meet.google.com/..."
+                error={!!errors.meeting_link}
+                helperText={errors.meeting_link?.message}
+                {...register('meeting_link')}
+              />
+            </Grid>
+          </Grid>
+
+          <Divider />
+
+          {/* Schedule per day */}
+          <Box>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" fontWeight={600}>Dias e Horários *</Typography>
+              <Button
+                size="small"
+                startIcon={<Add />}
+                onClick={() => append({ day: 'monday', start_time: '', end_time: '' })}
+              >
+                Adicionar Dia
+              </Button>
+            </Stack>
+            {errors.schedule?.root && (
+              <Typography variant="caption" color="error">{errors.schedule.root.message}</Typography>
+            )}
+            {errors.schedule && !Array.isArray(errors.schedule) && (errors.schedule as any).message && (
+              <Typography variant="caption" color="error">{(errors.schedule as any).message}</Typography>
+            )}
+            <Stack spacing={1.5}>
+              {fields.map((field, index) => (
+                <Stack key={field.id} direction="row" spacing={1} alignItems="flex-start">
+                  <Controller
+                    name={`schedule.${index}.day`}
+                    control={control}
+                    render={({ field: f }) => (
+                      <TextField
+                        select
+                        label="Dia"
+                        size="small"
+                        value={f.value}
+                        onChange={f.onChange}
+                        error={!!errors.schedule?.[index]?.day}
+                        sx={{ minWidth: 150 }}
+                      >
+                        {DAYS.map((d) => (
+                          <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                  <TextField
+                    label="Início"
+                    type="time"
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    error={!!errors.schedule?.[index]?.start_time}
+                    {...register(`schedule.${index}.start_time`)}
+                    sx={{ width: 120 }}
+                  />
+                  <TextField
+                    label="Término"
+                    type="time"
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    error={!!errors.schedule?.[index]?.end_time}
+                    {...register(`schedule.${index}.end_time`)}
+                    sx={{ width: 120 }}
+                  />
+                  {fields.length > 1 && (
+                    <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 0.5 }}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  )}
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Students */}
+          <Controller
+            name="student_ids"
+            control={control}
+            defaultValue={[]}
+            render={({ field }) => (
+              <Autocomplete
+                multiple
+                options={students}
+                getOptionLabel={(o) => o.full_name}
+                isOptionEqualToValue={(o, v) => o.id === v.id}
+                value={students.filter((s) => (field.value ?? []).includes(s.id))}
+                onChange={(_, newValue) => field.onChange(newValue.map((s) => s.id))}
+                renderOption={(props, option) => {
+                  const conflict = classInfoReady && !studentMatchesClass(option.availability, watchedSchedule)
+                  return (
+                    <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ flex: 1 }}>{option.full_name}</Typography>
+                      {conflict && (
+                        <Tooltip title="Sem disponibilidade neste turno">
+                          <Warning fontSize="small" color="warning" />
+                        </Tooltip>
+                      )}
+                    </Box>
+                  )
+                }}
+                renderInput={(params) => <TextField {...params} label="Alunos" placeholder="Buscar aluno..." />}
+              />
+            )}
+          />
+          {conflictingStudents.length > 0 && (
+            <Alert severity="warning">
+              {conflictingStudents.length === 1
+                ? `${conflictingStudents[0].full_name} não marcou disponibilidade neste turno.`
+                : `${conflictingStudents.map((s) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
+            </Alert>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} disabled={loading}>Cancelar</Button>
+        <Button type="submit" form="class-form" variant="contained" disabled={loading}
+          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}>
+          {isEdit ? 'Salvar' : 'Criar'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
