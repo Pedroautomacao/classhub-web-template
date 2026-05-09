@@ -309,7 +309,7 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
 
         {/* Day columns */}
         {activeDays.map((day) => (
-          <Box key={day} sx={{ flex: 1, position: 'relative', borderLeft: 1, borderColor: 'divider' }}>
+          <Box key={day} sx={{ flex: 1, position: 'relative', borderLeft: 1, borderColor: 'divider', overflow: 'hidden' }}>
             {/* Hour grid lines */}
             {hours.map((h) => (
               <Box key={h} sx={{
@@ -377,7 +377,7 @@ const NOT_TEACHER_ALERT = (
 )
 
 export function TeacherClassesTab() {
-  const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards')
+  const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('calendar')
   const [detailClass, setDetailClass] = useState<Class | null>(null)
 
   const { data: classes = [], isLoading, isError } = useQuery({
