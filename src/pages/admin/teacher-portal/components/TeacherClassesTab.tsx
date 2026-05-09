@@ -271,32 +271,31 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', borderBottom: 2, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Box sx={{ width: TIME_W, flexShrink: 0 }} />
-        {DAYS_ORDER.map((day) => {
-          const isToday = day === todayDay
-          return (
-            <Box key={day} sx={{
-              flex: 1,
-              textAlign: 'center',
-              py: 1.5,
-              typography: 'body2',
-              fontWeight: isToday ? 800 : 600,
-              borderLeft: 1,
-              borderColor: 'divider',
-              color: isToday ? 'primary.main' : 'text.secondary',
-              borderBottom: isToday ? 3 : 0,
-              borderBottomColor: 'primary.main',
-            }}>
-              {DAY_LABEL[day]}
-            </Box>
-          )
-        })}
-      </Box>
-
-      {/* Scrollable body */}
-      <Box ref={scrollRef} sx={{ overflowY: 'auto', maxHeight: 520 }}>
+      {/* Scrollable container — header is sticky inside so columns always align */}
+      <Box ref={scrollRef} sx={{ overflowY: 'auto', maxHeight: 560 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', borderBottom: 2, borderColor: 'divider', bgcolor: 'background.paper', position: 'sticky', top: 0, zIndex: 2 }}>
+          <Box sx={{ width: TIME_W, flexShrink: 0 }} />
+          {DAYS_ORDER.map((day) => {
+            const isToday = day === todayDay
+            return (
+              <Box key={day} sx={{
+                flex: 1,
+                textAlign: 'center',
+                py: 1.5,
+                typography: 'body2',
+                fontWeight: isToday ? 800 : 600,
+                borderLeft: 1,
+                borderColor: 'divider',
+                color: isToday ? 'primary.main' : 'text.secondary',
+                borderBottom: isToday ? 3 : 0,
+                borderBottomColor: 'primary.main',
+              }}>
+                {DAY_LABEL[day]}
+              </Box>
+            )
+          })}
+        </Box>
         <Box sx={{ display: 'flex', height: TOTAL_H, position: 'relative' }}>
           {/* Time axis */}
           <Box sx={{ width: TIME_W, flexShrink: 0, position: 'relative', borderRight: 1, borderColor: 'divider' }}>
