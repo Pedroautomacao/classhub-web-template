@@ -29,7 +29,7 @@ export const teachersApi = {
   getMe: () =>
     api.get<Teacher>('/teachers/me').then((r) => r.data),
 
-  updateMe: (data: { phone?: string | null; availability?: AvailabilityDay[] | null }) =>
+  updateMe: (data: { email?: string | null; phone?: string | null; availability?: AvailabilityDay[] | null }) =>
     api.patch<Teacher>('/teachers/me', data).then((r) => r.data),
 
   myClasses: () =>

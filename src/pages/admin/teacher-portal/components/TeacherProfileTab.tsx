@@ -13,6 +13,7 @@ import { getApiError } from '@/utils/errors'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 
 const schema = z.object({
+  email: z.string().email('E-mail inválido').min(1),
   phone: z.string().optional(),
   availability: z.array(availabilityDaySchema),
 })
@@ -38,12 +39,13 @@ export function TeacherProfileTab() {
   const { register, handleSubmit, reset, watch, control, setValue, formState: { errors, isDirty } } =
     useForm<FormValues>({
       resolver: zodResolver(schema) as any,
-      defaultValues: { phone: '', availability: [] },
+      defaultValues: { email: '', phone: '', availability: [] },
     })
 
   useEffect(() => {
     if (teacher) {
       reset({
+        email: teacher.email,
         phone: teacher.phone ? maskPhone(teacher.phone) : '',
         availability: teacher.availability ?? [],
       })
@@ -74,18 +76,21 @@ export function TeacherProfileTab() {
       sx={{ maxWidth: 600 }}
     >
       <Stack spacing={3}>
-        <Stack direction="row" spacing={4}>
-          <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">Nome</Typography>
-            <Typography variant="body1" fontWeight={500}>{teacher?.name}</Typography>
-          </Stack>
-          <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">E-mail</Typography>
-            <Typography variant="body1">{teacher?.email}</Typography>
-          </Stack>
+        <Stack spacing={0.5}>
+          <Typography variant="caption" color="text.secondary">Nome</Typography>
+          <Typography variant="body1" fontWeight={500}>{teacher?.name}</Typography>
         </Stack>
 
         <Divider />
+
+        <TextField
+          label="E-mail *"
+          type="email"
+          fullWidth
+          error={!!errors.email}
+          helperText={errors.email?.message}
+          {...register('email')}
+        />
 
         <TextField
           label="Telefone"
