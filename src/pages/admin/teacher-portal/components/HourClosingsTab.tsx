@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Box, Button, Card, CardContent, CardHeader, Chip, CircularProgress,
+  Alert, Box, Button, Card, CardContent, CardHeader, Chip, CircularProgress,
   Dialog, DialogActions, DialogContent, DialogTitle, Grid,
   IconButton, MenuItem, Stack, TextField, Tooltip,
-  Typography, Divider, Alert, Paper,
+  Typography, Divider, Paper,
 } from '@mui/material'
 import { Edit, Cancel, Add, Delete, InfoOutlined, CheckCircleOutline, HourglassEmpty, DoDisturbAlt } from '@mui/icons-material'
+import { teachersApi } from '@/api/teachers.api'
 import { hourClosingsApi } from '@/api/hour-closings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
@@ -439,6 +440,24 @@ const STATUS_ICON: Record<HourClosingStatus, ReactNode> = {
 export function HourClosingsTab() {
   const qc = useQueryClient()
   const { show } = useSnackbarStore()
+
+  const { isLoading: checkingTeacher, isError: notTeacher } = useQuery({
+    queryKey: ['my-profile'],
+    queryFn: teachersApi.getMe,
+    retry: false,
+  })
+
+  if (checkingTeacher) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
+  }
+
+  if (notTeacher) {
+    return (
+      <Alert severity="info" icon={<InfoOutlined />} sx={{ maxWidth: 520 }}>
+        Seu usuário não está vinculado a um cadastro de professor. Entre em contato com a administração para ter acesso a esta funcionalidade.
+      </Alert>
+    )
+  }
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [statusFilter, setStatusFilter] = useState<HourClosingStatus | ''>('')

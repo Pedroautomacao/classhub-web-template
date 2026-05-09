@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Box, Card, CardContent, CardHeader, Chip, Stack, TextField,
+  Alert, Box, Card, CardContent, CardHeader, Chip, Stack, TextField,
   IconButton, Typography, Tooltip, Skeleton, Grid, ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material'
-import { Save, LinkOff, ViewModule, CalendarViewWeek } from '@mui/icons-material'
+import { Save, LinkOff, ViewModule, CalendarViewWeek, InfoOutlined } from '@mui/icons-material'
 import { teachersApi } from '@/api/teachers.api'
 import { classesApi } from '@/api/classes.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -270,13 +270,22 @@ function CalendarView({ classes }: { classes: Class[] }) {
 
 // ─── Main tab ────────────────────────────────────────────────────────────────
 
+const NOT_TEACHER_ALERT = (
+  <Alert severity="info" icon={<InfoOutlined />} sx={{ maxWidth: 520 }}>
+    Seu usuário não está vinculado a um cadastro de professor. Entre em contato com a administração para ter acesso a esta funcionalidade.
+  </Alert>
+)
+
 export function TeacherClassesTab() {
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards')
 
-  const { data: classes = [], isLoading } = useQuery({
+  const { data: classes = [], isLoading, isError } = useQuery({
     queryKey: ['my-classes'],
     queryFn: teachersApi.myClasses,
+    retry: false,
   })
+
+  if (isError) return NOT_TEACHER_ALERT
 
   if (isLoading) {
     return (
