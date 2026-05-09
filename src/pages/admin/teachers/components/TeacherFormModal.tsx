@@ -87,6 +87,7 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
               <Autocomplete
                 options={availableUsers}
                 getOptionLabel={(u) => `${u.full_name} (${u.email})`}
+                isOptionEqualToValue={(option, value) => option.email === value?.email}
                 value={selectedUser}
                 onChange={handleUserSelect}
                 renderInput={(params) => (

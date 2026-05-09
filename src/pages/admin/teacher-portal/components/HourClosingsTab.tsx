@@ -68,8 +68,8 @@ function NewClosingForm() {
 
   const [sessionDate, setSessionDate] = useState('')
   const [selectedClass, setSelectedClass] = useState<AvailableClassForClosing | null>(null)
-  const [isAvulsa, setIsAvulsa] = useState(false)
-  const [avulsaName, setAvulsaName] = useState('')
+  const [specialType, setSpecialType] = useState<'avulsa' | 'reuniao' | null>(null)
+  const [specialName, setSpecialName] = useState('')
   const [sessionStart, setSessionStart] = useState('')
   const [sessionEnd, setSessionEnd] = useState('')
 
@@ -82,8 +82,8 @@ function NewClosingForm() {
   const handleDateChange = (date: string) => {
     setSessionDate(date)
     setSelectedClass(null)
-    setIsAvulsa(false)
-    setAvulsaName('')
+    setSpecialType(null)
+    setSpecialName('')
     setSessionStart('')
     setSessionEnd('')
     setSessionError('')
@@ -91,14 +91,15 @@ function NewClosingForm() {
 
   const handleClassChange = (value: string) => {
     setSessionError('')
-    if (value === '__avulsa__') {
-      setIsAvulsa(true)
+    if (value === '__avulsa__' || value === '__reuniao__') {
+      setSpecialType(value === '__avulsa__' ? 'avulsa' : 'reuniao')
       setSelectedClass(null)
+      setSpecialName('')
       setSessionStart('')
       setSessionEnd('')
     } else {
-      setIsAvulsa(false)
-      setAvulsaName('')
+      setSpecialType(null)
+      setSpecialName('')
       const cls = availableClasses.find((c) => c.class_id === value) ?? null
       setSelectedClass(cls)
       if (cls) {
@@ -114,14 +115,15 @@ function NewClosingForm() {
   const handleAddSession = () => {
     if (!sessionDate || !sessionStart || !sessionEnd) return
 
-    const classId = isAvulsa ? null : (selectedClass?.class_id ?? null)
-    const className = isAvulsa
-      ? (avulsaName.trim() || 'Aula avulsa')
+    const classId = specialType ? null : (selectedClass?.class_id ?? null)
+    const defaultName = specialType === 'reuniao' ? 'Reunião' : 'Aula avulsa'
+    const className = specialType
+      ? (specialName.trim() || defaultName)
       : (selectedClass?.class_name ?? 'Aula avulsa')
 
     const conflict = sessions.some((s) => {
       const sameDay = s.lesson_date === sessionDate
-      const sameClass = !isAvulsa && classId !== null && s.class_id === classId
+      const sameClass = !specialType && classId !== null && s.class_id === classId
       const overlaps = sessionStart < s.end_time && sessionEnd > s.start_time
       return sameDay && sameClass && overlaps
     })
@@ -138,8 +140,8 @@ function NewClosingForm() {
     ])
     setSessionDate('')
     setSelectedClass(null)
-    setIsAvulsa(false)
-    setAvulsaName('')
+    setSpecialType(null)
+    setSpecialName('')
     setSessionStart('')
     setSessionEnd('')
   }
@@ -152,6 +154,8 @@ function NewClosingForm() {
       setDateFrom('')
       setDateTo('')
       setNotes('')
+      setSpecialType(null)
+      setSpecialName('')
       show(`Fechamento criado! Valor sugerido: ${fmt(data.suggested_value)} (${data.total_hours}h)`)
     },
     onError: (err) => show(getApiError(err, 'Erro ao criar fechamento.'), 'error'),
@@ -239,7 +243,7 @@ function NewClosingForm() {
               2. Registrar aulas
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
-              Adicione cada aula lecionada: selecione a data, a turma e os horários. Para aulas fora do grade, use "Aula avulsa".
+              Adicione cada aula lecionada: selecione a data, a turma e os horários. Para aulas fora do grade use "Aula avulsa"; para reuniões use "Reunião".
             </Typography>
             <Grid container spacing={1.5} alignItems="flex-end">
               <Grid size={{ xs: 12, sm: 3 }}>
@@ -252,31 +256,32 @@ function NewClosingForm() {
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
-                  select label="Turma" fullWidth size="small"
-                  value={isAvulsa ? '__avulsa__' : (selectedClass?.class_id ?? '')}
+                  select label="Turma / Tipo" fullWidth size="small"
+                  value={specialType === 'avulsa' ? '__avulsa__' : specialType === 'reuniao' ? '__reuniao__' : (selectedClass?.class_id ?? '')}
                   onChange={(e) => handleClassChange(e.target.value)}
                   disabled={!sessionDate || loadingClasses}
                   helperText={sessionDate && !loadingClasses && availableClasses.length === 0 ? 'Nenhuma turma neste dia' : ' '}
                 >
                   <MenuItem value="">Selecione...</MenuItem>
                   <MenuItem value="__avulsa__">Aula avulsa</MenuItem>
+                  <MenuItem value="__reuniao__">Reunião</MenuItem>
                   {availableClasses.map((c) => (
                     <MenuItem key={c.class_id} value={c.class_id}>{c.class_name}</MenuItem>
                   ))}
                 </TextField>
               </Grid>
-              {isAvulsa && (
+              {specialType && (
                 <Grid size={{ xs: 12, sm: 2 }}>
                   <TextField
                     label="Descrição (opcional)" fullWidth size="small"
-                    placeholder="Ex: Reposição..."
-                    value={avulsaName}
-                    onChange={(e) => setAvulsaName(e.target.value)}
+                    placeholder={specialType === 'reuniao' ? 'Ex: Reunião pedagógica...' : 'Ex: Reposição...'}
+                    value={specialName}
+                    onChange={(e) => setSpecialName(e.target.value)}
                     helperText=" "
                   />
                 </Grid>
               )}
-              <Grid size={{ xs: 6, sm: isAvulsa ? 1 : 2 }}>
+              <Grid size={{ xs: 6, sm: specialType ? 1 : 2 }}>
                 <TextField
                   label="Início *" type="time" fullWidth size="small"
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -284,7 +289,7 @@ function NewClosingForm() {
                   helperText=" "
                 />
               </Grid>
-              <Grid size={{ xs: 6, sm: isAvulsa ? 1 : 2 }}>
+              <Grid size={{ xs: 6, sm: specialType ? 1 : 2 }}>
                 <TextField
                   label="Término *" type="time" fullWidth size="small"
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -311,7 +316,7 @@ function NewClosingForm() {
               <Stack spacing={0.75} mt={1}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="caption" fontWeight={600} color="text.secondary" textTransform="uppercase">
-                    Aulas adicionadas ({sessions.length})
+                    Lançamentos adicionados ({sessions.length})
                   </Typography>
                   <Typography variant="caption" fontWeight={600} color="primary">
                     Total: {totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}h
@@ -349,7 +354,7 @@ function NewClosingForm() {
               <Paper variant="outlined" sx={{ p: 1.5, mt: 1, mb: 1.5, borderColor: 'primary.light', bgcolor: 'primary.50' }}>
                 <Typography variant="body2" color="text.secondary">
                   Período: <strong>{fmtDate(dateFrom)} – {fmtDate(dateTo)}</strong>
-                  &nbsp;·&nbsp; {sessions.length} aula{sessions.length !== 1 ? 's' : ''}
+                  &nbsp;·&nbsp; {sessions.length} lançamento{sessions.length !== 1 ? 's' : ''}
                   &nbsp;·&nbsp; <strong>{totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}h</strong> no total
                 </Typography>
               </Paper>
