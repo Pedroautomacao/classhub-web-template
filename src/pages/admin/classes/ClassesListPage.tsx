@@ -18,6 +18,7 @@ import { getApiError } from '@/utils/errors'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { DAYS } from '@/utils/availability'
+import { exportToXlsx } from '@/utils/export'
 import type { Class, Teacher } from '@/types'
 
 const DAY_LABELS: Record<string, string> = Object.fromEntries(DAYS.map((d) => [d.value, d.label]))
@@ -51,6 +52,7 @@ export function ClassesListPage() {
   const [filterDay, setFilterDay] = useState('')
   const [filterStartTime, setFilterStartTime] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   const { data: teachers = [] } = useQuery({
     queryKey: ['teachers'],
@@ -85,6 +87,29 @@ export function ClassesListPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['classes'] }); setDeleteTarget(null); show('Turma excluída.') },
     onError: (error) => show(getApiError(error, 'Erro ao excluir turma.'), 'error'),
   })
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await classesApi.list({
+        teacher_id: filterTeacher?.id || undefined,
+        name: filterName || undefined,
+        day_of_week: filterDay || undefined,
+        start_time: filterStartTime || undefined,
+        class_type: filterType || undefined,
+      })
+      exportToXlsx(rows, [
+        { label: 'Nome', value: (c) => c.name },
+        { label: 'Professor', value: (c) => c.teacher?.name ?? '' },
+        { label: 'Dias/Horários', value: (c) => c.schedule.map((s) => `${s.day} ${s.start_time}-${s.end_time}`).join('; ') },
+        { label: 'Tipo', value: (c) => c.class_type },
+        { label: 'Frequência', value: (c) => c.frequency },
+        { label: 'Alunos', value: (c) => c.students.length },
+      ], 'turmas')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const columns: Column<Class>[] = [
     { key: 'name', label: 'Nome' },
@@ -229,7 +254,7 @@ export function ClassesListPage() {
               {CLASS_TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
             </TextField>
           </Stack>
-          <DataTable columns={columns} rows={classes} loading={isLoading} emptyMessage="Nenhuma turma cadastrada." />
+          <DataTable columns={columns} rows={classes} loading={isLoading} emptyMessage="Nenhuma turma cadastrada." onExport={handleExport} isExporting={isExporting} />
         </>
       )}
       <ClassFormModal

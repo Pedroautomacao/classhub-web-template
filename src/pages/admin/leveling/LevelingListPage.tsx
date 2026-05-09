@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -52,6 +53,7 @@ export function LevelingListPage() {
   const [statusFilter, setStatusFilter] = useState<ContactStatus | undefined>(initialContactStatus)
   const [nameFilter, setNameFilter] = useState('')
   const [phoneFilter, setPhoneFilter] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
   const [viewForm, setViewForm] = useState<LevelingFormResponse | null>(null)
   const [editStatus, setEditStatus] = useState<LevelingFormResponse | null>(null)
   const [newStatus, setNewStatus] = useState<ContactStatus>('analyze')
@@ -83,6 +85,28 @@ export function LevelingListPage() {
     },
     onError: (error) => show(getApiError(error, 'Erro ao atualizar status.'), 'error'),
   })
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await levelingApi.list({
+        contact_status: statusFilter,
+        name: nameFilter || undefined,
+        phone: phoneFilter || undefined,
+      })
+      exportToXlsx(rows, [
+        { label: 'Nome', value: (f) => f.full_name },
+        { label: 'E-mail', value: (f) => f.email },
+        { label: 'Telefone', value: (f) => f.phone },
+        { label: 'Status', value: (f) => CONTACT_STATUS_LABELS[f.contact_status] },
+        { label: 'Nível', value: (f) => f.level_result ?? '' },
+        { label: 'Recomendação', value: (f) => f.recommendation ?? '' },
+        { label: 'Data', value: (f) => f.created_at },
+      ], 'nivelamentos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const columns: Column<LevelingFormResponse>[] = [
     { key: 'full_name', label: 'Nome' },
@@ -175,7 +199,7 @@ export function LevelingListPage() {
         />
       </Stack>
 
-      <DataTable columns={columns} rows={forms} loading={isLoading} emptyMessage="Nenhum formulário encontrado." />
+      <DataTable columns={columns} rows={forms} loading={isLoading} emptyMessage="Nenhum formulário encontrado." onExport={handleExport} isExporting={isExporting} />
 
       {/* Dialog de visualização */}
       <Dialog open={!!viewForm} onClose={() => setViewForm(null)} maxWidth="sm" fullWidth>

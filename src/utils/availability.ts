@@ -1,4 +1,4 @@
-import type { AvailabilityDay, ClassScheduleEntry } from '@/types'
+import type { AvailabilityDay, Class, ClassScheduleEntry } from '@/types'
 
 export const DAYS = [
   { value: 'monday', label: 'Segunda-feira' },
@@ -38,4 +38,27 @@ export function teacherMatchesClass(
     if (!dayAvail) return false
     return dayAvail.slots.some((slot) => slot.start <= start_time && start_time <= slot.end)
   })
+}
+
+/**
+ * Returns the first conflicting class/entry if any schedule entry overlaps with an existing class.
+ * Excludes `excludeClassId` (the class being edited).
+ */
+export function findTeacherScheduleConflict(
+  teacherClasses: Class[],
+  newSchedule: ClassScheduleEntry[],
+  excludeClassId?: string,
+): { className: string; day: string; start: string; end: string } | null {
+  for (const cls of teacherClasses) {
+    if (cls.id === excludeClassId) continue
+    for (const ex of cls.schedule) {
+      for (const ne of newSchedule) {
+        if (ex.day !== ne.day || !ne.start_time || !ne.end_time) continue
+        if (ne.start_time < ex.end_time && ne.end_time > ex.start_time) {
+          return { className: cls.name, day: ex.day, start: ex.start_time, end: ex.end_time }
+        }
+      }
+    }
+  }
+  return null
 }

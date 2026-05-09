@@ -11,6 +11,7 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
+import { exportToXlsx } from '@/utils/export'
 import type { Plan } from '@/types'
 
 export function PlansListPage() {
@@ -24,6 +25,7 @@ export function PlansListPage() {
   const [selected, setSelected] = useState<Plan | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Plan | null>(null)
   const [toggleTarget, setToggleTarget] = useState<Plan | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['plans'],
@@ -79,6 +81,20 @@ export function PlansListPage() {
   const handleToggleActive = (plan: Plan) => {
     updateMutation.mutate({ id: plan.id, data: { is_active: !plan.is_active } })
     setToggleTarget(null)
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await plansApi.list()
+      exportToXlsx(rows, [
+        { label: 'Nome', value: (p) => p.name },
+        { label: 'Descrição', value: (p) => p.description ?? '' },
+        { label: 'Preço', value: (p) => p.price ?? '' },
+      ], 'planos')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const columns: Column<Plan>[] = [
@@ -175,6 +191,8 @@ export function PlansListPage() {
         rows={plans}
         loading={isLoading}
         emptyMessage="Nenhum plano cadastrado."
+        onExport={handleExport}
+        isExporting={isExporting}
       />
 
       <PlanFormModal

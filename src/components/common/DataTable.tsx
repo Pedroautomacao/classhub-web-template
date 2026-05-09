@@ -9,7 +9,10 @@ import {
   Skeleton,
   Typography,
   Box,
+  Button,
+  CircularProgress,
 } from '@mui/material'
+import { FileDownload } from '@mui/icons-material'
 import type { ReactNode } from 'react'
 
 export interface Column<T> {
@@ -26,6 +29,8 @@ interface DataTableProps<T extends { id: string }> {
   loading?: boolean
   emptyMessage?: string
   skeletonRows?: number
+  onExport?: () => void
+  isExporting?: boolean
 }
 
 export function DataTable<T extends { id: string }>({
@@ -34,9 +39,25 @@ export function DataTable<T extends { id: string }>({
   loading = false,
   emptyMessage = 'Nenhum registro encontrado.',
   skeletonRows = 5,
+  onExport,
+  isExporting = false,
 }: DataTableProps<T>) {
   return (
-    <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+    <Box>
+      {onExport && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={isExporting ? <CircularProgress size={14} color="inherit" /> : <FileDownload />}
+            onClick={onExport}
+            disabled={isExporting}
+          >
+            Exportar Excel
+          </Button>
+        </Box>
+      )}
+      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
       <Table size="small">
         <TableHead>
           <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -90,5 +111,6 @@ export function DataTable<T extends { id: string }>({
         </TableBody>
       </Table>
     </TableContainer>
+    </Box>
   )
 }

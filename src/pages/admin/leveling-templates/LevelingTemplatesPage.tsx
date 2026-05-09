@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,12 +14,14 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   TextField,
   Tooltip,
   Typography,
@@ -120,7 +122,7 @@ function TemplateCard({ template, canWrite, canDelete, onEdit, onActivate, onDel
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 20 }}>
                 {i + 1}.
               </Typography>
-              <Typography variant="body2" flex={1} noWrap>{q.text}</Typography>
+              <Typography variant="body2" flex={1} noWrap>{q.text}{q.required ? ' *' : ''}</Typography>
               <Chip label={TYPE_LABELS[q.type] ?? q.type} size="small" variant="outlined" />
             </Stack>
           ))}
@@ -213,6 +215,23 @@ function QuestionEditor({ index, control, register, watch, errors, onRemove }: Q
               </Stack>
             </Box>
           )}
+
+          <Controller
+            control={control}
+            name={`questions.${index}.required`}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={field.value ?? true}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    size="small"
+                  />
+                }
+                label={<Typography variant="caption">{field.value ?? true ? 'Obrigatória' : 'Opcional'}</Typography>}
+              />
+            )}
+          />
         </Stack>
       </CardContent>
     </Card>
@@ -240,15 +259,32 @@ function TemplateFormModal({ open, template, onClose }: TemplateFormModalProps) 
     formState: { errors, isSubmitting },
   } = useForm<TemplateFormValues>({
     resolver: zodResolver(templateSchema),
-    defaultValues: template
-      ? { name: template.name, questions: template.questions }
-      : { name: '', questions: [] },
+    defaultValues: { name: '', questions: [] },
   })
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({
     control,
     name: 'questions',
   })
+
+  useEffect(() => {
+    if (open) {
+      if (template) {
+        reset({
+          name: template.name,
+          questions: (template.questions as any[]).map((q) => ({
+            id: q.id,
+            type: q.type,
+            text: q.text,
+            options: q.options ?? [],
+            required: q.required ?? true,
+          })),
+        })
+      } else {
+        reset({ name: '', questions: [] })
+      }
+    }
+  }, [open, template, reset])
 
   const createMutation = useMutation({
     mutationFn: levelingTemplatesApi.create,

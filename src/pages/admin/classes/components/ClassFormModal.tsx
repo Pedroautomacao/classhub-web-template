@@ -13,7 +13,8 @@ import { useQuery } from '@tanstack/react-query'
 import { teachersApi } from '@/api/teachers.api'
 import { studentsApi } from '@/api/students.api'
 import { settingsApi } from '@/api/settings.api'
-import { studentMatchesClass, teacherMatchesClass, DAYS } from '@/utils/availability'
+import { studentMatchesClass, teacherMatchesClass, findTeacherScheduleConflict, DAYS } from '@/utils/availability'
+import { classesApi } from '@/api/classes.api'
 import type { Class } from '@/types'
 
 
@@ -70,7 +71,17 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedLevels = watch('levels') ?? []
   const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
 
+  const { data: teacherClasses = [] } = useQuery({
+    queryKey: ['classes', 'teacher', watchedTeacherId],
+    queryFn: () => classesApi.list({ teacher_id: watchedTeacherId! }),
+    enabled: !!watchedTeacherId,
+  })
+
   const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
+
+  const teacherScheduleConflict = classInfoReady && teacherClasses.length > 0
+    ? findTeacherScheduleConflict(teacherClasses, watchedSchedule, cls?.id)
+    : null
 
   const conflictingStudents = classInfoReady
     ? students.filter(
@@ -130,6 +141,11 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               {selectedTeacher && classInfoReady && !teacherMatchesClass(selectedTeacher.availability, watchedSchedule) && (
                 <Alert severity="warning" sx={{ mt: 1 }}>
                   O professor não tem disponibilidade cadastrada para este dia/horário.
+                </Alert>
+              )}
+              {teacherScheduleConflict && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  Conflito de horário: o professor já possui a turma "{teacherScheduleConflict.className}" neste dia ({teacherScheduleConflict.day}) das {teacherScheduleConflict.start} às {teacherScheduleConflict.end}.
                 </Alert>
               )}
             </Grid>

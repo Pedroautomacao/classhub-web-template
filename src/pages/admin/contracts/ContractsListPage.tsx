@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -56,21 +57,18 @@ export function ContractsListPage() {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400)
     return () => clearTimeout(timer)
   }, [searchInput])
+  const [isExporting, setIsExporting] = useState(false)
   const [cancelTarget, setCancelTarget] = useState<Contract | null>(null)
   const [fileContract, setFileContract] = useState<Contract | null>(null)
   const [deleteFileTarget, setDeleteFileTarget] = useState<FileMetadata | null>(null)
 
-  const { data: contractsRaw = [], isLoading, isFetching } = useQuery({
-    queryKey: ['contracts', statusFilter, search],
+  const { data: contracts = [], isLoading, isFetching } = useQuery({
+    queryKey: ['contracts', statusFilter, expiringSoonFilter, search],
     queryFn: () => contractsApi.list({
-      ...(statusFilter ? { contract_status: statusFilter } : {}),
+      ...(expiringSoonFilter ? { expiring_soon: true } : statusFilter ? { contract_status: statusFilter } : {}),
       ...(search ? { search } : {}),
     }),
   })
-
-  const contracts = expiringSoonFilter
-    ? contractsRaw.filter((c) => isExpiringSoon(c.end_date) && c.status === 'active')
-    : contractsRaw
 
   const cancelMutation = useMutation({
     mutationFn: contractsApi.cancel,
@@ -135,6 +133,24 @@ export function ContractsListPage() {
       downloadBase64File(data.content, data.file_name)
     } catch {
       show('Erro ao baixar o arquivo.', 'error')
+    }
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await contractsApi.list({
+        ...(expiringSoonFilter ? { expiring_soon: true } : statusFilter ? { contract_status: statusFilter } : {}),
+        ...(search ? { search } : {}),
+      })
+      exportToXlsx(rows, [
+        { label: 'Aluno', value: (c) => c.student?.full_name ?? '' },
+        { label: 'Status', value: (c) => c.status ?? '' },
+        { label: 'Início', value: (c) => c.start_date ?? '' },
+        { label: 'Fim', value: (c) => c.end_date ?? '' },
+      ], 'contratos')
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -258,7 +274,7 @@ export function ContractsListPage() {
         />
       </Stack>
 
-      <DataTable columns={columns} rows={contracts} loading={isLoading} emptyMessage="Nenhum contrato encontrado." />
+      <DataTable columns={columns} rows={contracts} loading={isLoading} emptyMessage="Nenhum contrato encontrado." onExport={handleExport} isExporting={isExporting} />
 
       {/* Cancelar contrato */}
       <ConfirmDialog

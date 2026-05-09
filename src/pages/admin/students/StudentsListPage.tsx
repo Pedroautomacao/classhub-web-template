@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -143,6 +144,7 @@ export function StudentsListPage() {
   const initialStatus = (location.state as any)?.status as StatusFilter
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus ?? undefined)
   const [search, setSearch] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
   const [editTarget, setEditTarget] = useState<Student | null>(null)
   const [deactivateTarget, setDeactivateTarget] = useState<Student | null>(null)
   const [reactivateTarget, setReactivateTarget] = useState<Student | null>(null)
@@ -232,6 +234,22 @@ export function StudentsListPage() {
     },
     onError: (error) => show(getApiError(error, 'Erro ao adicionar à turma.'), 'error'),
   })
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await studentsApi.list(apiStatusFilter)
+      exportToXlsx(rows, [
+        { label: 'Nome', value: (s) => s.full_name },
+        { label: 'E-mail', value: (s) => s.email ?? '' },
+        { label: 'Telefone', value: (s) => s.phone ?? '' },
+        { label: 'Status', value: (s) => s.status },
+        { label: 'Nível', value: (s) => s.level ?? '' },
+      ], 'alunos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const columns: Column<Student>[] = [
     { key: 'full_name', label: 'Nome' },
@@ -358,6 +376,8 @@ export function StudentsListPage() {
         rows={filtered}
         loading={isLoading}
         emptyMessage="Nenhum aluno encontrado."
+        onExport={handleExport}
+        isExporting={isExporting}
       />
 
       <StudentFormModal

@@ -13,6 +13,7 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
+import { exportToXlsx } from '@/utils/export'
 import type { Teacher } from '@/types'
 
 export function TeachersListPage() {
@@ -28,6 +29,7 @@ export function TeachersListPage() {
   const initialTraining = (location.state as any)?.training as 'all' | 'active' | 'training' | undefined
   const [tab, setTab] = useState(initialTab ?? 0)
   const [trainingFilter, setTrainingFilter] = useState<'all' | 'active' | 'training'>(initialTraining ?? 'all')
+  const [isExporting, setIsExporting] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [selected, setSelected] = useState<Teacher | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null)
@@ -60,6 +62,21 @@ export function TeachersListPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['teachers'] }); setDeleteTarget(null); show('Professor excluído.') },
     onError: (error) => show(getApiError(error, 'Erro ao excluir professor.'), 'error'),
   })
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const rows = await teachersApi.list()
+      exportToXlsx(rows, [
+        { label: 'Nome', value: (t) => t.name },
+        { label: 'E-mail', value: (t) => t.email ?? '' },
+        { label: 'Telefone', value: (t) => t.phone ?? '' },
+        { label: 'Em treinamento', value: (t) => t.is_training ? 'Sim' : 'Não' },
+      ], 'professores')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const columns: Column<Teacher>[] = [
     {
@@ -159,7 +176,7 @@ export function TeachersListPage() {
             <ToggleButton value="active">Ativos</ToggleButton>
             <ToggleButton value="training">Em Treinamento</ToggleButton>
           </ToggleButtonGroup>
-          <DataTable columns={columns} rows={filteredTeachers} loading={isLoading} emptyMessage="Nenhum professor cadastrado." />
+          <DataTable columns={columns} rows={filteredTeachers} loading={isLoading} emptyMessage="Nenhum professor cadastrado." onExport={handleExport} isExporting={isExporting} />
         </>
       )}
       {tab === 1 && canApprove && <HourClosingsAdminTab />}
