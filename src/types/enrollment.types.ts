@@ -48,10 +48,22 @@ export interface PublicEnrollmentRequest {
 export interface PublicReEnrollmentRequest {
   cpf?: string
   email?: string
+  phone?: string
+  instagram?: string
+  birth_date?: string
   plan_id: string
   payment_method: string
   start_date: string
   grace_period_days?: number
+}
+
+export interface StudentLookupResult {
+  full_name: string
+  cpf: string | null
+  email: string | null
+  phone: string | null
+  instagram: string | null
+  birth_date: string | null
 }
 
 export interface EnrollmentResponse {

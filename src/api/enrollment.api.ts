@@ -1,5 +1,5 @@
 import api from './axios'
-import type { EnrollmentRequest, ReEnrollmentRequest, EnrollmentResponse, PublicEnrollmentRequest, PublicReEnrollmentRequest } from '@/types'
+import type { EnrollmentRequest, ReEnrollmentRequest, EnrollmentResponse, PublicEnrollmentRequest, PublicReEnrollmentRequest, StudentLookupResult } from '@/types'
 
 export const enrollmentApi = {
   enroll: (data: EnrollmentRequest) =>
@@ -13,4 +13,7 @@ export const enrollmentApi = {
 
   publicReEnroll: (data: PublicReEnrollmentRequest) =>
     api.post<EnrollmentResponse>('/enrollment/re-enroll/public', data).then((r) => r.data),
+
+  lookupByCpf: (cpf: string) =>
+    api.get<StudentLookupResult>('/enrollment/lookup', { params: { cpf } }).then((r) => r.data),
 }
