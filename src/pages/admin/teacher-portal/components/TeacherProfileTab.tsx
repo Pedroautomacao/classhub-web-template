@@ -57,6 +57,7 @@ export function TeacherProfileTab() {
     mutationFn: (data: FormValues) => teachersApi.updateMe(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-profile'] })
+      qc.invalidateQueries({ queryKey: ['teachers'] })
       show('Perfil atualizado!')
     },
     onError: (err) => show(getApiError(err, 'Erro ao salvar perfil.'), 'error'),
