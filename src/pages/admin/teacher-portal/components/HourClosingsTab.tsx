@@ -447,17 +447,6 @@ export function HourClosingsTab() {
     retry: false,
   })
 
-  if (checkingTeacher) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
-  }
-
-  if (notTeacher) {
-    return (
-      <Alert severity="info" icon={<InfoOutlined />} sx={{ maxWidth: 520 }}>
-        Seu usuário não está vinculado a um cadastro de professor. Entre em contato com a administração para ter acesso a esta funcionalidade.
-      </Alert>
-    )
-  }
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [statusFilter, setStatusFilter] = useState<HourClosingStatus | ''>('')
@@ -472,6 +461,7 @@ export function HourClosingsTab() {
       date_to: dateTo || undefined,
       status_filter: (statusFilter as HourClosingStatus) || undefined,
     }),
+    enabled: !notTeacher,
   })
 
   const cancelMutation = useMutation({
@@ -479,6 +469,18 @@ export function HourClosingsTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-hour-closings'] }); setCancelTarget(null); show('Fechamento cancelado.') },
     onError: (err) => show(getApiError(err, 'Erro ao cancelar.'), 'error'),
   })
+
+  if (checkingTeacher) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
+  }
+
+  if (notTeacher) {
+    return (
+      <Alert severity="info" icon={<InfoOutlined />} sx={{ maxWidth: 520 }}>
+        Seu usuário não está vinculado a um cadastro de professor. Entre em contato com a administração para ter acesso a esta funcionalidade.
+      </Alert>
+    )
+  }
 
   return (
     <Box>
