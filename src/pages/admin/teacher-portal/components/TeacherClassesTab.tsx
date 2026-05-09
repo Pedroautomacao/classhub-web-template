@@ -269,22 +269,13 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
   const totalH = hours.length * HOUR_PX
 
   return (
-    <Box sx={{ overflowX: 'auto', border: 1, borderColor: 'divider', borderRadius: 2 }}>
+    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}>
       {/* Header */}
-      <Box sx={{
-        display: 'flex',
-        borderBottom: 1,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-      }}>
+      <Box sx={{ display: 'flex', borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ width: TIME_W, flexShrink: 0 }} />
         {activeDays.map((day) => (
           <Box key={day} sx={{
             flex: 1,
-            minWidth: 130,
             textAlign: 'center',
             py: 1.5,
             fontWeight: 700,
@@ -298,7 +289,7 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
       </Box>
 
       {/* Body */}
-      <Box sx={{ display: 'flex', height: totalH, position: 'relative' }}>
+      <Box sx={{ display: 'flex', height: totalH }}>
         {/* Time axis */}
         <Box sx={{ width: TIME_W, flexShrink: 0, position: 'relative', borderRight: 1, borderColor: 'divider' }}>
           {hours.map((h) => (
@@ -318,7 +309,7 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
 
         {/* Day columns */}
         {activeDays.map((day) => (
-          <Box key={day} sx={{ flex: 1, minWidth: 130, position: 'relative', borderLeft: 1, borderColor: 'divider' }}>
+          <Box key={day} sx={{ flex: 1, position: 'relative', borderLeft: 1, borderColor: 'divider' }}>
             {/* Hour grid lines */}
             {hours.map((h) => (
               <Box key={h} sx={{
