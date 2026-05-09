@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog,
@@ -238,13 +238,28 @@ function ClassDetailModal({ cls, onClose }: { cls: Class; onClose: () => void })
 
 // ─── Calendar view ────────────────────────────────────────────────────────────
 
-const HOUR_PX = 64
+const HOUR_PX = 60
 const TIME_W = 52
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i) // 0–23
+const TOTAL_H = 24 * HOUR_PX
+
+// Convert JS getDay() (0=Sun) to DAYS_ORDER index
+function jsDayToIndex(d: number) { return d === 0 ? 6 : d - 1 }
 
 function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClick: (cls: Class) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const now = new Date()
+  const currentMin = now.getHours() * 60 + now.getMinutes()
+  const todayDay = DAYS_ORDER[jsDayToIndex(now.getDay())]
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = Math.max(0, currentMin * (HOUR_PX / 60) - 120)
+    }
+  }, [])
+
   type Entry = { cls: Class; colorIdx: number; startMin: number; endMin: number }
   const byDay: Record<string, Entry[]> = {}
-
   classes.forEach((cls, colorIdx) => {
     cls.schedule.forEach((s) => {
       if (!byDay[s.day]) byDay[s.day] = []
@@ -252,117 +267,143 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
     })
   })
 
-  const activeDays = DAYS_ORDER.filter((d) => byDay[d]?.length)
-  const allEntries = Object.values(byDay).flat()
-
-  if (activeDays.length === 0) {
-    return (
-      <Typography color="text.secondary" textAlign="center" py={4}>
-        Nenhuma turma com horário definido.
-      </Typography>
-    )
-  }
-
-  const minHour = Math.floor(Math.min(...allEntries.map((e) => e.startMin)) / 60)
-  const maxHour = Math.ceil(Math.max(...allEntries.map((e) => e.endMin)) / 60)
-  const hours = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i)
-  const totalH = hours.length * HOUR_PX
+  const currentTimeTop = currentMin * (HOUR_PX / 60)
 
   return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}>
+    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ display: 'flex', borderBottom: 2, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Box sx={{ width: TIME_W, flexShrink: 0 }} />
-        {activeDays.map((day) => (
-          <Box key={day} sx={{
-            flex: 1,
-            textAlign: 'center',
-            py: 1.5,
-            fontWeight: 700,
-            typography: 'body2',
-            borderLeft: 1,
-            borderColor: 'divider',
-          }}>
-            {DAY_LABEL[day]}
-          </Box>
-        ))}
+        {DAYS_ORDER.map((day) => {
+          const isToday = day === todayDay
+          return (
+            <Box key={day} sx={{
+              flex: 1,
+              textAlign: 'center',
+              py: 1.5,
+              typography: 'body2',
+              fontWeight: isToday ? 800 : 600,
+              borderLeft: 1,
+              borderColor: 'divider',
+              color: isToday ? 'primary.main' : 'text.secondary',
+              borderBottom: isToday ? 3 : 0,
+              borderBottomColor: 'primary.main',
+            }}>
+              {DAY_LABEL[day]}
+            </Box>
+          )
+        })}
       </Box>
 
-      {/* Body */}
-      <Box sx={{ display: 'flex', height: totalH }}>
-        {/* Time axis */}
-        <Box sx={{ width: TIME_W, flexShrink: 0, position: 'relative', borderRight: 1, borderColor: 'divider' }}>
-          {hours.map((h) => (
-            <Box key={h} sx={{
-              position: 'absolute',
-              top: (h - minHour) * HOUR_PX,
-              left: 0,
-              right: 0,
-              ...(h > minHour ? { borderTop: 1, borderColor: 'divider' } : {}),
-            }}>
-              <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5, lineHeight: 1.2 }}>
-                {String(h).padStart(2, '0')}:00
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-
-        {/* Day columns */}
-        {activeDays.map((day) => (
-          <Box key={day} sx={{ flex: 1, position: 'relative', borderLeft: 1, borderColor: 'divider', overflow: 'hidden' }}>
-            {/* Hour grid lines */}
-            {hours.map((h) => (
+      {/* Scrollable body */}
+      <Box ref={scrollRef} sx={{ overflowY: 'auto', maxHeight: 520 }}>
+        <Box sx={{ display: 'flex', height: TOTAL_H, position: 'relative' }}>
+          {/* Time axis */}
+          <Box sx={{ width: TIME_W, flexShrink: 0, position: 'relative', borderRight: 1, borderColor: 'divider' }}>
+            {ALL_HOURS.map((h) => (
               <Box key={h} sx={{
                 position: 'absolute',
-                top: (h - minHour) * HOUR_PX,
+                top: h * HOUR_PX,
                 left: 0,
                 right: 0,
-                height: HOUR_PX,
-                ...(h > minHour ? { borderTop: 1, borderColor: 'divider' } : {}),
-              }} />
+                ...(h > 0 ? { borderTop: 1, borderColor: 'divider' } : {}),
+              }}>
+                <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5, lineHeight: 1.2, fontSize: '0.68rem' }}>
+                  {String(h).padStart(2, '0')}:00
+                </Typography>
+              </Box>
             ))}
-
-            {/* Class blocks */}
-            {(byDay[day] ?? []).map(({ cls, colorIdx, startMin, endMin }) => {
-              const top = (startMin - minHour * 60) * (HOUR_PX / 60) + 2
-              const height = Math.max((endMin - startMin) * (HOUR_PX / 60) - 4, 24)
-              const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
-              return (
-                  <Box key={`${cls.id}-${startMin}`} sx={{
-                    position: 'absolute',
-                    top,
-                    height,
-                    left: 4,
-                    right: 4,
-                    bgcolor: color.bg,
-                    color: color.text,
-                    borderRadius: 1,
-                    px: 1,
-                    py: 0.25,
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    '&:hover': { filter: 'brightness(0.9)' },
-                  }}
-                  onClick={() => onClassClick(cls)}>
-                    <Typography variant="caption" fontWeight={700} noWrap>
-                      {cls.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.65rem' }}>
-                      {fmtMin(startMin)}–{fmtMin(endMin)}
-                    </Typography>
-                    {height >= 56 && (
-                      <Typography variant="caption" sx={{ opacity: 0.85, fontSize: '0.65rem' }}>
-                        {cls.students.length} aluno{cls.students.length !== 1 ? 's' : ''}
-                      </Typography>
-                    )}
-                  </Box>
-              )
-            })}
           </Box>
-        ))}
+
+          {/* Current time line spanning all day columns */}
+          <Box sx={{
+            position: 'absolute',
+            top: currentTimeTop,
+            left: TIME_W - 4,
+            right: 0,
+            height: 2,
+            bgcolor: 'error.main',
+            zIndex: 3,
+            pointerEvents: 'none',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: -4,
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              bgcolor: 'error.main',
+            },
+          }} />
+
+          {/* Day columns */}
+          {DAYS_ORDER.map((day) => {
+            const isToday = day === todayDay
+            return (
+              <Box key={day} sx={{
+                flex: 1,
+                position: 'relative',
+                borderLeft: 1,
+                borderColor: 'divider',
+                bgcolor: isToday ? 'action.hover' : 'transparent',
+              }}>
+                {/* Hour grid lines */}
+                {ALL_HOURS.map((h) => (
+                  <Box key={h} sx={{
+                    position: 'absolute',
+                    top: h * HOUR_PX,
+                    left: 0,
+                    right: 0,
+                    height: HOUR_PX,
+                    ...(h > 0 ? { borderTop: 1, borderColor: 'divider' } : {}),
+                  }} />
+                ))}
+
+                {/* Class blocks */}
+                {(byDay[day] ?? []).map(({ cls, colorIdx, startMin, endMin }) => {
+                  const top = startMin * (HOUR_PX / 60) + 2
+                  const height = Math.max((endMin - startMin) * (HOUR_PX / 60) - 4, 24)
+                  const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
+                  return (
+                    <Box key={`${cls.id}-${startMin}`} sx={{
+                      position: 'absolute',
+                      top,
+                      height,
+                      left: 4,
+                      right: 4,
+                      bgcolor: color.bg,
+                      color: color.text,
+                      borderRadius: 1,
+                      px: 1,
+                      py: 0.25,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      zIndex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      '&:hover': { filter: 'brightness(0.85)', zIndex: 2 },
+                    }}
+                    onClick={() => onClassClick(cls)}>
+                      <Typography variant="caption" fontWeight={700} noWrap>
+                        {cls.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.65rem' }}>
+                        {fmtMin(startMin)}–{fmtMin(endMin)}
+                      </Typography>
+                      {height >= 56 && (
+                        <Typography variant="caption" sx={{ opacity: 0.85, fontSize: '0.65rem' }}>
+                          {cls.students.length} aluno{cls.students.length !== 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                    </Box>
+                  )
+                })}
+              </Box>
+            )
+          })}
+        </Box>
       </Box>
     </Box>
   )
