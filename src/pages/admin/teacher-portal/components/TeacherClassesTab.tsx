@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Alert, Box, Card, CardContent, CardHeader, Chip, Stack, TextField,
+  Alert, Box, Button, Card, CardContent, CardHeader, Chip, Dialog,
+  DialogContent, DialogTitle, Divider, Stack, TextField,
   IconButton, Typography, Tooltip, Skeleton, Grid, ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material'
-import { Save, LinkOff, ViewModule, CalendarViewWeek, InfoOutlined } from '@mui/icons-material'
+import { Save, LinkOff, ViewModule, CalendarViewWeek, InfoOutlined, VideoCall } from '@mui/icons-material'
 import { teachersApi } from '@/api/teachers.api'
 import { classesApi } from '@/api/classes.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -124,12 +125,123 @@ function ClassCard({ cls }: { cls: Class }) {
   )
 }
 
+// ─── Class detail modal ───────────────────────────────────────────────────────
+
+function ClassDetailModal({ cls, onClose }: { cls: Class; onClose: () => void }) {
+  const qc = useQueryClient()
+  const { show } = useSnackbarStore()
+  const [link, setLink] = useState(cls.meeting_link ?? '')
+
+  const linkMutation = useMutation({
+    mutationFn: (val: string | null) => classesApi.updateMeetingLink(cls.id, val),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-classes'] }); show('Link salvo!') },
+    onError: (err) => show(getApiError(err, 'Erro ao salvar link.'), 'error'),
+  })
+
+  const hasChanged = link !== (cls.meeting_link ?? '')
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography variant="h6" fontWeight={700}>{cls.name}</Typography>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={0.5}>
+          <Chip label={TYPE_LABEL[cls.class_type] ?? cls.class_type} size="small" color="primary" />
+          <Chip label={cls.frequency === 'weekly' ? 'Semanal' : 'Quinzenal'} size="small" variant="outlined" />
+        </Stack>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 0 }}>
+        <Stack spacing={2}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">
+              Horários
+            </Typography>
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={0.5}>
+              {cls.schedule.map((s) => (
+                <Chip
+                  key={s.day}
+                  label={`${DAY_LABEL[s.day] ?? s.day}  ${s.start_time}–${s.end_time}`}
+                  size="small"
+                  variant="outlined"
+                />
+              ))}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">
+              Alunos ({cls.students.length})
+            </Typography>
+            {cls.students.length > 0 ? (
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={0.5}>
+                {cls.students.map((s) => (
+                  <Chip key={s.id} label={s.full_name} size="small" />
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="text.secondary" mt={0.5}>
+                Nenhum aluno nesta turma.
+              </Typography>
+            )}
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" display="block" mb={1}>
+              Link da aula
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="https://meet.google.com/..."
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                slotProps={{ input: { startAdornment: <VideoCall sx={{ mr: 0.5, color: 'text.secondary', fontSize: 20 }} /> } }}
+              />
+              {hasChanged && (
+                <Tooltip title="Salvar link">
+                  <IconButton color="primary" size="small" disabled={linkMutation.isPending}
+                    onClick={() => linkMutation.mutate(link || null)}>
+                    <Save fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {!hasChanged && cls.meeting_link && (
+                <Tooltip title="Remover link">
+                  <IconButton size="small" onClick={() => { setLink(''); linkMutation.mutate(null) }}>
+                    <LinkOff fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+            {cls.meeting_link && !hasChanged && (
+              <Button
+                size="small"
+                href={cls.meeting_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ mt: 1 }}
+                startIcon={<VideoCall fontSize="small" />}
+              >
+                Entrar na aula
+              </Button>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Calendar view ────────────────────────────────────────────────────────────
 
 const HOUR_PX = 64
 const TIME_W = 52
 
-function CalendarView({ classes }: { classes: Class[] }) {
+function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClick: (cls: Class) => void }) {
   type Entry = { cls: Class; colorIdx: number; startMin: number; endMin: number }
   const byDay: Record<string, Entry[]> = {}
 
@@ -225,11 +337,7 @@ function CalendarView({ classes }: { classes: Class[] }) {
               const height = Math.max((endMin - startMin) * (HOUR_PX / 60) - 4, 24)
               const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
               return (
-                <Tooltip
-                  key={`${cls.id}-${startMin}`}
-                  title={`${cls.name} • ${fmtMin(startMin)}–${fmtMin(endMin)} • ${cls.students.length} aluno(s)`}
-                >
-                  <Box sx={{
+                  <Box key={`${cls.id}-${startMin}`} sx={{
                     position: 'absolute',
                     top,
                     height,
@@ -241,11 +349,13 @@ function CalendarView({ classes }: { classes: Class[] }) {
                     px: 1,
                     py: 0.25,
                     overflow: 'hidden',
-                    cursor: 'default',
+                    cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
-                  }}>
+                    '&:hover': { filter: 'brightness(0.9)' },
+                  }}
+                  onClick={() => onClassClick(cls)}>
                     <Typography variant="caption" fontWeight={700} noWrap>
                       {cls.name}
                     </Typography>
@@ -258,7 +368,6 @@ function CalendarView({ classes }: { classes: Class[] }) {
                       </Typography>
                     )}
                   </Box>
-                </Tooltip>
               )
             })}
           </Box>
@@ -278,6 +387,7 @@ const NOT_TEACHER_ALERT = (
 
 export function TeacherClassesTab() {
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards')
+  const [detailClass, setDetailClass] = useState<Class | null>(null)
 
   const { data: classes = [], isLoading, isError } = useQuery({
     queryKey: ['my-classes'],
@@ -338,7 +448,11 @@ export function TeacherClassesTab() {
           ))}
         </Grid>
       ) : (
-        <CalendarView classes={classes} />
+        <CalendarView classes={classes} onClassClick={setDetailClass} />
+      )}
+
+      {detailClass && (
+        <ClassDetailModal cls={detailClass} onClose={() => setDetailClass(null)} />
       )}
     </Stack>
   )
