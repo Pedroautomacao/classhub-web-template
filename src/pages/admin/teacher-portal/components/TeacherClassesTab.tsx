@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Card, CardContent, CardHeader, Chip, Stack, TextField,
-  IconButton, Typography, Tooltip, Skeleton, Grid,
+  IconButton, Typography, Tooltip, Skeleton, Grid, ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material'
-import { Save, LinkOff } from '@mui/icons-material'
+import { Save, LinkOff, ViewModule, CalendarViewWeek } from '@mui/icons-material'
 import { teachersApi } from '@/api/teachers.api'
 import { classesApi } from '@/api/classes.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -19,6 +20,28 @@ const DAY_LABEL: Record<string, string> = {
 const TYPE_LABEL: Record<string, string> = {
   grammar: 'Gramática', conversation: 'Conversação', private_lesson: 'Aula particular',
 }
+
+const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+const CLASS_COLORS = [
+  { bg: 'primary.main', text: 'primary.contrastText' },
+  { bg: 'secondary.main', text: 'secondary.contrastText' },
+  { bg: 'success.main', text: 'success.contrastText' },
+  { bg: 'warning.main', text: 'warning.contrastText' },
+  { bg: 'error.main', text: 'error.contrastText' },
+  { bg: 'info.main', text: 'info.contrastText' },
+]
+
+function toMin(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + (m ?? 0)
+}
+
+function fmtMin(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
+}
+
+// ─── Card view ───────────────────────────────────────────────────────────────
 
 function ClassCard({ cls }: { cls: Class }) {
   const qc = useQueryClient()
@@ -101,7 +124,155 @@ function ClassCard({ cls }: { cls: Class }) {
   )
 }
 
+// ─── Calendar view ────────────────────────────────────────────────────────────
+
+const HOUR_PX = 64
+const TIME_W = 52
+
+function CalendarView({ classes }: { classes: Class[] }) {
+  type Entry = { cls: Class; colorIdx: number; startMin: number; endMin: number }
+  const byDay: Record<string, Entry[]> = {}
+
+  classes.forEach((cls, colorIdx) => {
+    cls.schedule.forEach((s) => {
+      if (!byDay[s.day]) byDay[s.day] = []
+      byDay[s.day].push({ cls, colorIdx, startMin: toMin(s.start_time), endMin: toMin(s.end_time) })
+    })
+  })
+
+  const activeDays = DAYS_ORDER.filter((d) => byDay[d]?.length)
+  const allEntries = Object.values(byDay).flat()
+
+  if (activeDays.length === 0) {
+    return (
+      <Typography color="text.secondary" textAlign="center" py={4}>
+        Nenhuma turma com horário definido.
+      </Typography>
+    )
+  }
+
+  const minHour = Math.floor(Math.min(...allEntries.map((e) => e.startMin)) / 60)
+  const maxHour = Math.ceil(Math.max(...allEntries.map((e) => e.endMin)) / 60)
+  const hours = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i)
+  const totalH = hours.length * HOUR_PX
+
+  return (
+    <Box sx={{ overflowX: 'auto', border: 1, borderColor: 'divider', borderRadius: 2 }}>
+      {/* Header */}
+      <Box sx={{
+        display: 'flex',
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+      }}>
+        <Box sx={{ width: TIME_W, flexShrink: 0 }} />
+        {activeDays.map((day) => (
+          <Box key={day} sx={{
+            flex: 1,
+            minWidth: 130,
+            textAlign: 'center',
+            py: 1.5,
+            fontWeight: 700,
+            typography: 'body2',
+            borderLeft: 1,
+            borderColor: 'divider',
+          }}>
+            {DAY_LABEL[day]}
+          </Box>
+        ))}
+      </Box>
+
+      {/* Body */}
+      <Box sx={{ display: 'flex', height: totalH, position: 'relative' }}>
+        {/* Time axis */}
+        <Box sx={{ width: TIME_W, flexShrink: 0, position: 'relative', borderRight: 1, borderColor: 'divider' }}>
+          {hours.map((h) => (
+            <Box key={h} sx={{
+              position: 'absolute',
+              top: (h - minHour) * HOUR_PX,
+              left: 0,
+              right: 0,
+              ...(h > minHour ? { borderTop: 1, borderColor: 'divider' } : {}),
+            }}>
+              <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5, lineHeight: 1.2 }}>
+                {String(h).padStart(2, '0')}:00
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Day columns */}
+        {activeDays.map((day) => (
+          <Box key={day} sx={{ flex: 1, minWidth: 130, position: 'relative', borderLeft: 1, borderColor: 'divider' }}>
+            {/* Hour grid lines */}
+            {hours.map((h) => (
+              <Box key={h} sx={{
+                position: 'absolute',
+                top: (h - minHour) * HOUR_PX,
+                left: 0,
+                right: 0,
+                height: HOUR_PX,
+                ...(h > minHour ? { borderTop: 1, borderColor: 'divider' } : {}),
+              }} />
+            ))}
+
+            {/* Class blocks */}
+            {(byDay[day] ?? []).map(({ cls, colorIdx, startMin, endMin }) => {
+              const top = (startMin - minHour * 60) * (HOUR_PX / 60) + 2
+              const height = Math.max((endMin - startMin) * (HOUR_PX / 60) - 4, 24)
+              const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
+              return (
+                <Tooltip
+                  key={`${cls.id}-${startMin}`}
+                  title={`${cls.name} • ${fmtMin(startMin)}–${fmtMin(endMin)} • ${cls.students.length} aluno(s)`}
+                >
+                  <Box sx={{
+                    position: 'absolute',
+                    top,
+                    height,
+                    left: 4,
+                    right: 4,
+                    bgcolor: color.bg,
+                    color: color.text,
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.25,
+                    overflow: 'hidden',
+                    cursor: 'default',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                  }}>
+                    <Typography variant="caption" fontWeight={700} noWrap>
+                      {cls.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.65rem' }}>
+                      {fmtMin(startMin)}–{fmtMin(endMin)}
+                    </Typography>
+                    {height >= 56 && (
+                      <Typography variant="caption" sx={{ opacity: 0.85, fontSize: '0.65rem' }}>
+                        {cls.students.length} aluno{cls.students.length !== 1 ? 's' : ''}
+                      </Typography>
+                    )}
+                  </Box>
+                </Tooltip>
+              )
+            })}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
+// ─── Main tab ────────────────────────────────────────────────────────────────
+
 export function TeacherClassesTab() {
+  const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards')
+
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ['my-classes'],
     queryFn: teachersApi.myClasses,
@@ -128,12 +299,38 @@ export function TeacherClassesTab() {
   }
 
   return (
-    <Grid container spacing={2}>
-      {classes.map((cls) => (
-        <Grid key={cls.id} size={{ xs: 12, md: 6 }}>
-          <ClassCard cls={cls} />
+    <Stack spacing={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <ToggleButtonGroup
+          size="small"
+          value={viewMode}
+          exclusive
+          onChange={(_, v) => v && setViewMode(v)}
+        >
+          <ToggleButton value="cards">
+            <Tooltip title="Visualização em cards">
+              <ViewModule fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value="calendar">
+            <Tooltip title="Calendário semanal">
+              <CalendarViewWeek fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {viewMode === 'cards' ? (
+        <Grid container spacing={2}>
+          {classes.map((cls) => (
+            <Grid key={cls.id} size={{ xs: 12, md: 6 }}>
+              <ClassCard cls={cls} />
+            </Grid>
+          ))}
         </Grid>
-      ))}
-    </Grid>
+      ) : (
+        <CalendarView classes={classes} />
+      )}
+    </Stack>
   )
 }

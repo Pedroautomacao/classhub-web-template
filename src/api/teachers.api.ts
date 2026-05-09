@@ -26,6 +26,12 @@ export const teachersApi = {
   remove: (id: string) =>
     api.delete(`/teachers/${id}`),
 
+  getMe: () =>
+    api.get<Teacher>('/teachers/me').then((r) => r.data),
+
+  updateMe: (data: { phone?: string | null; availability?: AvailabilityDay[] | null }) =>
+    api.patch<Teacher>('/teachers/me', data).then((r) => r.data),
+
   myClasses: () =>
     api.get<import('@/types').Class[]>('/teachers/me/classes').then((r) => r.data),
 
