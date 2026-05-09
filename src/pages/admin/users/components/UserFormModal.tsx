@@ -14,7 +14,7 @@ import { Permission } from '@/utils/permissions'
 const PERMISSION_GROUPS = [
   { label: 'Alunos', permissions: [Permission.STUDENTS_READ, Permission.STUDENTS_WRITE, Permission.STUDENTS_DELETE] },
   { label: 'Contratos', permissions: [Permission.CONTRACTS_READ, Permission.CONTRACTS_WRITE, Permission.CONTRACTS_DELETE] },
-  { label: 'Professores', permissions: [Permission.TEACHERS_READ, Permission.TEACHERS_WRITE, Permission.TEACHERS_DELETE] },
+  { label: 'Professores', permissions: [Permission.TEACHERS_READ, Permission.TEACHERS_WRITE, Permission.TEACHERS_DELETE, Permission.TEACHERS_VIEW_RATE] },
   { label: 'Turmas', permissions: [Permission.CLASSES_READ, Permission.CLASSES_WRITE, Permission.CLASSES_DELETE] },
   { label: 'Planos', permissions: [Permission.PLANS_READ, Permission.PLANS_WRITE, Permission.PLANS_DELETE] },
   { label: 'Nivelamento & Templates', permissions: [Permission.LEVELING_READ, Permission.LEVELING_WRITE, Permission.LEVELING_DELETE] },
@@ -26,7 +26,7 @@ const PERMISSION_GROUPS = [
 ]
 
 const PERM_ACTION_LABEL: Record<string, string> = {
-  read: 'Ver', write: 'Editar', delete: 'Excluir', approve: 'Aprovar',
+  read: 'Ver', write: 'Editar', delete: 'Excluir', approve: 'Aprovar', view_rate: 'Ver Valor/hora', list: 'Listar',
 }
 
 function getAction(perm: string) {

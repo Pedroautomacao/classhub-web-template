@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,7 +15,12 @@ import {
   InputAdornment,
   useMediaQuery,
   useTheme,
+  Typography,
+  Box,
+  Chip,
+  IconButton,
 } from '@mui/material'
+import { Add, Close } from '@mui/icons-material'
 import type { Plan } from '@/types'
 
 const schema = z.object({
@@ -32,7 +37,7 @@ interface PlanFormModalProps {
   plan?: Plan | null
   loading?: boolean
   onClose: () => void
-  onSubmit: (values: FormValues) => void
+  onSubmit: (values: FormValues & { benefits: string[] }) => void
 }
 
 export function PlanFormModal({
@@ -46,6 +51,9 @@ export function PlanFormModal({
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
 
   const isEdit = !!plan
+
+  const [benefits, setBenefits] = useState<string[]>([])
+  const [benefitInput, setBenefitInput] = useState('')
 
   const {
     register,
@@ -66,14 +74,25 @@ export function PlanFormModal({
             }
           : { name: '', description: '', duration_months: 1, price: 0 }
       )
+      setBenefits(plan?.benefits ?? [])
+      setBenefitInput('')
     }
   }, [open, plan, reset])
+
+  const addBenefit = () => {
+    const trimmed = benefitInput.trim()
+    if (!trimmed || benefits.includes(trimmed)) return
+    setBenefits((prev) => [...prev, trimmed])
+    setBenefitInput('')
+  }
+
+  const removeBenefit = (b: string) => setBenefits((prev) => prev.filter((x) => x !== b))
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>{isEdit ? 'Editar Plano' : 'Novo Plano'}</DialogTitle>
       <DialogContent sx={{ overflowX: 'hidden' }}>
-        <Stack component="form" id="plan-form" onSubmit={handleSubmit(onSubmit)} spacing={2} sx={{ pt: 1 }}>
+        <Stack component="form" id="plan-form" onSubmit={handleSubmit((v) => onSubmit({ ...v, benefits }))} spacing={2} sx={{ pt: 1 }}>
           <TextField
             label="Nome *"
             fullWidth
@@ -112,6 +131,36 @@ export function PlanFormModal({
               />
             </Grid>
           </Grid>
+
+          <Box>
+            <Typography variant="subtitle2" fontWeight={600} mb={1}>Vantagens</Typography>
+            <Stack direction="row" spacing={1} mb={1}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Ex: 2 aulas por semana"
+                value={benefitInput}
+                onChange={(e) => setBenefitInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBenefit() } }}
+              />
+              <IconButton onClick={addBenefit} color="primary" disabled={!benefitInput.trim()}>
+                <Add />
+              </IconButton>
+            </Stack>
+            {benefits.length > 0 && (
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {benefits.map((b) => (
+                  <Chip
+                    key={b}
+                    label={b}
+                    size="small"
+                    onDelete={() => removeBenefit(b)}
+                    deleteIcon={<Close fontSize="small" />}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

@@ -28,16 +28,17 @@ const schema = z.object({
   birth_date: z.string().optional(),
   availability: z.array(availabilityDaySchema).optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
-  payment_method: z.enum(['pix', 'credit_card', 'bank_slip', 'cash'], { message: 'Selecione a forma de pagamento' }),
+  payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
   payment_day: z.number({ message: 'Informe o dia' }).int().min(1).max(31),
-  start_date: z.string().min(1, 'Data de início obrigatória'),
+  start_date: z.string().min(1, 'Data de cobrança obrigatória'),
   grace_period_days: z.number({ message: 'Informe um número' }).int().min(0).optional(),
   contract_accepted: z.literal(true, { message: 'O aluno deve aceitar o contrato' }),
 })
 type FormValues = z.infer<typeof schema>
 
 const PAYMENT_LABELS: Record<string, string> = {
-  pix: 'PIX', credit_card: 'Cartão de crédito', bank_slip: 'Boleto', cash: 'Dinheiro',
+  credit_card: 'Cartão de crédito — Assinatura',
+  pix: 'PIX — Valor integral do plano',
 }
 
 export function EnrollmentPage() {
@@ -157,7 +158,7 @@ export function EnrollmentPage() {
               <TextField label="Dia de vencimento *" type="number" fullWidth error={!!errors.payment_day} helperText={errors.payment_day?.message} {...register('payment_day', { valueAsNumber: true })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Data de início *" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} error={!!errors.start_date} helperText={errors.start_date?.message} {...register('start_date')} />
+              <TextField label="Data de cobrança *" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} error={!!errors.start_date} helperText={errors.start_date?.message} {...register('start_date')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
@@ -209,7 +210,7 @@ export function EnrollmentPage() {
 
           <FormControlLabel
             control={<Checkbox defaultChecked {...register('contract_accepted')} />}
-            label="Aluno aceitou os termos do contrato"
+            label="Declaro que recebi, li e aceito os termos de contrato."
           />
           {errors.contract_accepted && (
             <Typography variant="caption" color="error">{errors.contract_accepted.message}</Typography>

@@ -24,6 +24,7 @@ export function TeachersListPage() {
   const canWrite = hasPermission(Permission.TEACHERS_WRITE)
   const canDelete = hasPermission(Permission.TEACHERS_DELETE)
   const canApprove = hasPermission(Permission.HOUR_CLOSINGS_APPROVE)
+  const canViewRate = hasPermission(Permission.TEACHERS_VIEW_RATE)
 
   const initialTab = (location.state as any)?.tab as number | undefined
   const initialTraining = (location.state as any)?.training as 'all' | 'active' | 'training' | undefined
@@ -72,6 +73,7 @@ export function TeachersListPage() {
         { label: 'E-mail', value: (t) => t.email ?? '' },
         { label: 'Telefone', value: (t) => t.phone ?? '' },
         { label: 'Em treinamento', value: (t) => t.is_training ? 'Sim' : 'Não' },
+        ...(canViewRate ? [{ label: 'Valor/hora', value: (t: Teacher) => t.hourly_rate ?? '' }] : []),
       ], 'professores')
     } finally {
       setIsExporting(false)
@@ -96,10 +98,10 @@ export function TeachersListPage() {
     },
     { key: 'email', label: 'E-mail' },
     { key: 'phone', label: 'Telefone', render: (t) => t.phone ?? '—' },
-    {
-      key: 'hourly_rate', label: 'Valor/hora', align: 'right',
-      render: (t) => `R$ ${Number(t.hourly_rate).toFixed(2).replace('.', ',')}`,
-    },
+    ...(canViewRate ? [{
+      key: 'hourly_rate' as const, label: 'Valor/hora', align: 'right' as const,
+      render: (t: Teacher) => `R$ ${Number(t.hourly_rate).toFixed(2).replace('.', ',')}`,
+    }] : []),
     {
       key: 'is_training', label: 'Status', align: 'center',
       render: (t) => (

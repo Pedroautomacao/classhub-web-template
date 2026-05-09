@@ -8,6 +8,7 @@ export const Permission = {
   TEACHERS_READ: 'teachers:read',
   TEACHERS_WRITE: 'teachers:write',
   TEACHERS_DELETE: 'teachers:delete',
+  TEACHERS_VIEW_RATE: 'teachers:view_rate',
   CLASSES_READ: 'classes:read',
   CLASSES_WRITE: 'classes:write',
   CLASSES_DELETE: 'classes:delete',

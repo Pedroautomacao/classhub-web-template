@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Box,
@@ -6,22 +8,36 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActions,
   Skeleton,
   Stack,
   IconButton,
+  Button,
+  Collapse,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material'
-import { Schedule, AttachMoney } from '@mui/icons-material'
+import { Schedule, AttachMoney, CheckCircleOutline, Assignment } from '@mui/icons-material'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import { settingsApi } from '@/api/settings.api'
 import { plansApi } from '@/api/plans.api'
 import type { Plan } from '@/types'
 
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({ plan, whatsapp }: { plan: Plan; whatsapp: string | null }) {
+  const [expanded, setExpanded] = useState(false)
+
   const price = parseFloat(plan.price).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   })
+
+  const waNumber = whatsapp?.replace(/\D/g, '') ?? ''
+  const waMessage = encodeURIComponent(`Olá Fluent, tenho interesse no plano ${plan.name}.`)
+  const waLink = `https://wa.me/${waNumber}?text=${waMessage}`
 
   return (
     <Card
@@ -56,7 +72,51 @@ function PlanCard({ plan }: { plan: Plan }) {
             </Typography>
           </Stack>
         </Stack>
+
+        {plan.benefits && plan.benefits.length > 0 && (
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Divider sx={{ my: 2 }} />
+            <List dense disablePadding>
+              {plan.benefits.map((benefit, i) => (
+                <ListItem key={i} disableGutters sx={{ py: 0.25 }}>
+                  <ListItemIcon sx={{ minWidth: 28 }}>
+                    <CheckCircleOutline fontSize="small" color="success" />
+                  </ListItemIcon>
+                  <ListItemText primary={benefit} primaryTypographyProps={{ variant: 'body2' }} />
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
+        )}
       </CardContent>
+
+      <CardActions sx={{ px: 3, pb: 2, pt: 0, flexDirection: 'column', gap: 1 }}>
+        {plan.benefits && plan.benefits.length > 0 && (
+          <Button
+            fullWidth
+            size="small"
+            variant="outlined"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+          </Button>
+        )}
+        {whatsapp && (
+          <Button
+            fullWidth
+            size="small"
+            variant="contained"
+            color="success"
+            startIcon={<WhatsAppIcon />}
+            component="a"
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Tenho interesse
+          </Button>
+        )}
+      </CardActions>
     </Card>
   )
 }
@@ -74,6 +134,8 @@ function PlansSkeleton() {
 }
 
 export function LandingPage() {
+  const navigate = useNavigate()
+
   const { data: landing, isLoading: loadingLanding } = useQuery({
     queryKey: ['landing'],
     queryFn: settingsApi.getLanding,
@@ -84,7 +146,7 @@ export function LandingPage() {
     queryFn: plansApi.listPublic,
   })
 
-  const schoolName = landing?.school_name ?? 'ClassHub'
+  const schoolName = landing?.school_name ?? 'Fluent Flow'
   const welcomeText =
     landing?.welcome_text ??
     'Aprenda inglês com qualidade, praticidade e foco nos seus objetivos.'
@@ -160,6 +222,38 @@ export function LandingPage() {
         </Container>
       </Box>
 
+      {/* CTA — Nivelamento */}
+      <Box sx={{ bgcolor: 'primary.main', py: { xs: 5, md: 7 }, px: 2 }}>
+        <Container maxWidth="md">
+          <Stack alignItems="center" spacing={2} textAlign="center">
+            <Assignment sx={{ fontSize: 48, color: 'white' }} />
+            <Typography variant="h4" fontWeight={700} color="white" sx={{ fontSize: { xs: '1.6rem', md: '2rem' } }}>
+              Descubra seu nível de inglês
+            </Typography>
+            <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.85)', maxWidth: 520 }}>
+              Faça nosso teste de nivelamento gratuito e saiba qual turma é a ideal para você.
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate('/leveling')}
+              sx={{
+                mt: 1,
+                bgcolor: 'white',
+                color: 'primary.main',
+                fontWeight: 700,
+                px: 4,
+                py: 1.5,
+                fontSize: '1rem',
+                '&:hover': { bgcolor: 'grey.100' },
+              }}
+            >
+              Fazer teste de nivelamento
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
+
       {/* Planos */}
       <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: 'background.default' }}>
         <Container maxWidth="lg">
@@ -180,7 +274,7 @@ export function LandingPage() {
             <Grid container spacing={3} justifyContent="center">
               {plans.map((plan) => (
                 <Grid key={plan.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <PlanCard plan={plan} />
+                  <PlanCard plan={plan} whatsapp={whatsapp} />
                 </Grid>
               ))}
             </Grid>

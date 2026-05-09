@@ -64,12 +64,13 @@ export function PlansListPage() {
     onError: (error) => show(getApiError(error, 'Erro ao excluir plano.'), 'error'),
   })
 
-  const handleSubmit = (values: { name: string; description?: string; duration_months: number; price: number }) => {
+  const handleSubmit = (values: { name: string; description?: string; duration_months: number; price: number; benefits: string[] }) => {
     const payload = {
       name: values.name,
       description: values.description ?? null,
       duration_months: values.duration_months,
       price: String(values.price),
+      benefits: values.benefits.length > 0 ? values.benefits : null,
     }
     if (selected) {
       updateMutation.mutate({ id: selected.id, data: payload })

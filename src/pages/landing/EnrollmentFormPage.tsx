@@ -26,10 +26,8 @@ import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 
 const PAYMENT_METHODS = [
-  { value: 'pix', label: 'PIX' },
-  { value: 'credit_card', label: 'Cartão de crédito' },
-  { value: 'bank_slip', label: 'Boleto' },
-  { value: 'cash', label: 'Dinheiro' },
+  { value: 'credit_card', label: 'Cartão de crédito — Assinatura' },
+  { value: 'pix', label: 'PIX — Valor integral do plano' },
 ]
 
 const schema = z.object({
@@ -40,8 +38,8 @@ const schema = z.object({
   birth_date: z.string().optional(),
   cpf: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
-  payment_method: z.enum(['pix', 'credit_card', 'bank_slip', 'cash'], { message: 'Selecione a forma de pagamento' }),
-  start_date: z.string().min(1, 'Informe a data de início'),
+  payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
+  start_date: z.string().min(1, 'Informe a data de cobrança'),
   contract_accepted: z.literal(true, {
     error: 'Você deve aceitar os termos para continuar',
   }),
@@ -234,7 +232,7 @@ export function EnrollmentFormPage() {
               </Grid>
               <Grid size={{ xs: 12, sm: 5 }}>
                 <TextField
-                  label="Data de início *"
+                  label="Data de cobrança *"
                   type="date"
                   fullWidth
                   slotProps={{ inputLabel: { shrink: true } }}
@@ -261,7 +259,7 @@ export function EnrollmentFormPage() {
                     }
                     label={
                       <Typography variant="body2">
-                        Declaro que li e aceito os termos da matrícula e estou ciente das regras da escola. *
+                        Declaro que recebi, li e aceito os termos de contrato. *
                       </Typography>
                     }
                   />
