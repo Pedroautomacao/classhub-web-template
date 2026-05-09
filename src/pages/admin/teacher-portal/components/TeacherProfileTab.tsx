@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Box, Button, CircularProgress, Divider, Stack, TextField, Typography,
+  Alert, Box, Button, CircularProgress, Divider, Stack, TextField, Typography,
 } from '@mui/material'
-import { Save } from '@mui/icons-material'
+import { Save, InfoOutlined } from '@mui/icons-material'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
@@ -31,9 +31,10 @@ export function TeacherProfileTab() {
   const qc = useQueryClient()
   const { show } = useSnackbarStore()
 
-  const { data: teacher, isLoading } = useQuery({
+  const { data: teacher, isLoading, isError } = useQuery({
     queryKey: ['my-profile'],
     queryFn: teachersApi.getMe,
+    retry: false,
   })
 
   const { register, handleSubmit, reset, watch, control, setValue, formState: { errors, isDirty } } =
@@ -66,6 +67,14 @@ export function TeacherProfileTab() {
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
       </Box>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Alert severity="info" icon={<InfoOutlined />} sx={{ maxWidth: 520 }}>
+        Seu usuário não está vinculado a um cadastro de professor. Entre em contato com a administração para habilitar a edição de perfil.
+      </Alert>
     )
   }
 
