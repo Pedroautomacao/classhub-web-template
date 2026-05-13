@@ -3,6 +3,11 @@ import type { AvailabilityDay } from './teachers.types'
 export type StudentStatus = 'active' | 'inactive'
 export type PaymentMethod = 'pix' | 'credit_card' | 'bank_slip' | 'cash'
 
+export interface StudentClassRef {
+  id: string
+  name: string
+}
+
 export interface Student {
   id: string
   full_name: string
@@ -18,6 +23,7 @@ export interface Student {
   level: string | null
   contract_accepted: boolean
   status: StudentStatus
+  classes: StudentClassRef[]
   created_at: string
   updated_at: string
 }

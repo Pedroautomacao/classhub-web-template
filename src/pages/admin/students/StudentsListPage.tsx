@@ -161,26 +161,15 @@ export function StudentsListPage() {
     queryKey: ['classes'],
     queryFn: () => classesApi.list(),
     staleTime: 30_000,
+    enabled: !!addToClassTarget,
   })
-
-  // Map: studentId → class names they belong to
-  const studentClassMap = useMemo(() => {
-    const map = new Map<string, string[]>()
-    for (const c of classes) {
-      for (const s of c.students) {
-        const existing = map.get(s.id) ?? []
-        map.set(s.id, [...existing, c.name])
-      }
-    }
-    return map
-  }, [classes])
 
   const filtered = useMemo(() => {
     let result = students
     if (statusFilter === 'without_class') {
-      result = result.filter((s) => s.status === 'active' && !studentClassMap.has(s.id))
+      result = result.filter((s) => s.status === 'active' && (s.classes?.length ?? 0) === 0)
     } else if (statusFilter === 'with_class') {
-      result = result.filter((s) => s.status === 'active' && studentClassMap.has(s.id))
+      result = result.filter((s) => s.status === 'active' && (s.classes?.length ?? 0) > 0)
     }
     if (search) {
       const q = search.toLowerCase()
@@ -192,7 +181,7 @@ export function StudentsListPage() {
       )
     }
     return result
-  }, [students, statusFilter, studentClassMap, search])
+  }, [students, statusFilter, search])
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: StudentUpdate }) => studentsApi.update(id, data),
@@ -259,11 +248,10 @@ export function StudentsListPage() {
       key: 'status' as any,
       label: 'Turma',
       render: (s) => {
-        const names = studentClassMap.get(s.id)
-        if (!names?.length) return <Chip label="Sem turma" size="small" variant="outlined" color="warning" />
+        if (!s.classes?.length) return <Chip label="Sem turma" size="small" variant="outlined" color="warning" />
         return (
           <Stack direction="row" flexWrap="wrap" gap={0.5}>
-            {names.map((n) => <Chip key={n} label={n} size="small" variant="outlined" />)}
+            {s.classes.map((c) => <Chip key={c.id} label={c.name} size="small" variant="outlined" />)}
           </Stack>
         )
       },
@@ -282,7 +270,7 @@ export function StudentsListPage() {
       width: 120,
       render: (s) => (
         <Stack direction="row" justifyContent="flex-end">
-          {canWriteClasses && s.status === 'active' && !studentClassMap.has(s.id) && (
+          {canWriteClasses && s.status === 'active' && !s.classes?.length && (
             <Tooltip title="Adicionar à turma">
               <IconButton size="small" color="primary" onClick={() => setAddToClassTarget(s)}>
                 <ClassOutlined fontSize="small" />
