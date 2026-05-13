@@ -30,6 +30,7 @@ const schema = z.object({
   schedule: z.array(scheduleEntrySchema).min(1, 'Adicione pelo menos um dia'),
   class_type: z.enum(['grammar', 'conversation', 'private_lesson']),
   frequency: z.enum(['weekly', 'biweekly']),
+  biweekly_start_date: z.string().optional(),
   student_ids: z.array(z.string()).optional(),
   meeting_link: z.string().url('URL inválida').optional().or(z.literal('')),
   levels: z.array(z.string()).optional(),
@@ -69,6 +70,8 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedSchedule = watch('schedule') ?? []
   const watchedStudentIds = watch('student_ids') ?? []
   const watchedLevels = watch('levels') ?? []
+  const watchedFrequency = watch('frequency')
+  const watchedBiweeklyStartDate = watch('biweekly_start_date')
   const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
 
   const { data: allClasses = [] } = useQuery({
@@ -83,7 +86,12 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
 
   const teacherScheduleConflict = classInfoReady && teacherClasses.length > 0
-    ? findTeacherScheduleConflict(teacherClasses, watchedSchedule, cls?.id)
+    ? findTeacherScheduleConflict(
+        teacherClasses, watchedSchedule,
+        watchedFrequency ?? 'weekly',
+        watchedBiweeklyStartDate || null,
+        cls?.id,
+      )
     : null
 
   const conflictingStudents = classInfoReady
@@ -107,6 +115,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             schedule: cls.schedule.map((e) => ({ day: e.day, start_time: e.start_time, end_time: e.end_time })),
             class_type: cls.class_type,
             frequency: cls.frequency,
+            biweekly_start_date: cls.biweekly_start_date ?? '',
             student_ids: cls.students.map((s) => s.id),
             meeting_link: cls.meeting_link ?? '',
             levels: cls.levels ?? [],
@@ -117,6 +126,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             schedule: [{ day: 'monday', start_time: '', end_time: '' }],
             class_type: 'grammar',
             frequency: 'weekly',
+            biweekly_start_date: '',
             student_ids: [],
             meeting_link: '',
             levels: [],
@@ -166,11 +176,30 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField select label="Frequência *" fullWidth {...register('frequency')} defaultValue="weekly">
-                <MenuItem value="weekly">Semanal</MenuItem>
-                <MenuItem value="biweekly">Quinzenal</MenuItem>
-              </TextField>
+              <Controller
+                name="frequency"
+                control={control}
+                render={({ field }) => (
+                  <TextField select label="Frequência *" fullWidth {...field} value={field.value ?? 'weekly'}>
+                    <MenuItem value="weekly">Semanal</MenuItem>
+                    <MenuItem value="biweekly">Quinzenal</MenuItem>
+                  </TextField>
+                )}
+              />
             </Grid>
+            {watchedFrequency === 'biweekly' && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Data da 1ª aula *"
+                  type="date"
+                  fullWidth
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  helperText="Escolha o dia em que a turma começa. O sistema alterna automaticamente a cada 2 semanas."
+                  error={!!errors.biweekly_start_date}
+                  {...register('biweekly_start_date')}
+                />
+              </Grid>
+            )}
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Link da chamada (Meet, Zoom…)"

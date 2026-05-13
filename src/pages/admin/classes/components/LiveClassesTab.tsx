@@ -38,6 +38,17 @@ function parseTime(t: string) {
   return h * 60 + m
 }
 
+/** Returns true if a biweekly class is active in the current São Paulo week. */
+function isBiweeklyActive(startDate: string | null | undefined): boolean {
+  if (!startDate) return true
+  const ref = new Date(startDate + 'T00:00:00')
+  const spNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+  const spToday = new Date(spNow.getFullYear(), spNow.getMonth(), spNow.getDate())
+  const daysDiff = Math.floor((spToday.getTime() - ref.getTime()) / 86_400_000)
+  if (daysDiff < 0) return false
+  return Math.floor(daysDiff / 7) % 2 === 0
+}
+
 
 function ElapsedTimer({ startTime }: { startTime: string }) {
   const [tick, setTick] = useState(0)
@@ -241,6 +252,7 @@ export function LiveClassesTab() {
 
   const day = DAY_MAP[now.dayIndex]
   const liveClasses = classes
+    .filter((c) => c.frequency === 'weekly' || isBiweeklyActive(c.biweekly_start_date))
     .map((c) => {
       const entry = c.schedule.find(
         (s) => s.day === day && now.totalMinutes >= parseTime(s.start_time) && now.totalMinutes < parseTime(s.end_time)

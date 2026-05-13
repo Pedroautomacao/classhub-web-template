@@ -16,6 +16,7 @@ export interface ClassPayload {
   student_ids?: string[]
   meeting_link?: string | null
   levels?: string[] | null
+  biweekly_start_date?: string | null
 }
 
 export interface ClassListParams {

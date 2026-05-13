@@ -179,15 +179,17 @@ export function ClassesListPage() {
             'Vincular um professor responsável à turma',
             'Adicionar e remover alunos de cada turma',
             'Definir o link de reunião online (Google Meet, Zoom, etc.)',
-            'Visualizar turmas ativas e encerradas em abas separadas',
+            'Visualizar quais turmas estão acontecendo agora na aba "Ao Vivo"',
           ],
           tips: [
-            'Ao adicionar um aluno com horário conflitante com a turma, o sistema exibe um aviso — você pode ignorá-lo se souber da exceção.',
-            'Defina os níveis de idioma aceitos na turma para que o sistema alerte quando um aluno de nível diferente for adicionado.',
+            'Turmas quinzenais exigem uma "Data da 1ª aula". A partir dela o sistema alterna automaticamente a cada 2 semanas — nenhuma configuração adicional por semana.',
+            'Dois grupos quinzenais com a mesma professora e horário, mas semanas alternadas, não geram conflito — o sistema detecta a alternância automaticamente pela data de início.',
+            'A aba "Ao Vivo" exibe apenas as turmas em andamento agora, já respeitando a semana ativa das quinzenais.',
+            'Ao adicionar um aluno com horário conflitante, o sistema exibe um aviso — você pode ignorá-lo se souber da exceção.',
+            'Defina os níveis de idioma aceitos para que o sistema alerte quando um aluno de nível diferente for adicionado.',
             'O link de reunião pode ser editado diretamente pelo professor no Portal do Professor.',
-            'Turmas do tipo "Aula Particular" geralmente têm apenas um aluno.',
           ],
-          flow: 'Cadastro do Professor → Criação da Turma (com níveis) → Adição de Alunos → O Professor acessa pelo Portal.',
+          flow: 'Cadastro do Professor → Criação da Turma (defina frequência e, se quinzenal, a data da 1ª aula) → Adição de Alunos → O Professor acessa pelo Portal.',
         }}
       />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
@@ -261,7 +263,12 @@ export function ClassesListPage() {
         open={formOpen} cls={selected} loading={createMutation.isPending || updateMutation.isPending}
         onClose={() => { setFormOpen(false); setSelected(null) }}
         onSubmit={(v) => {
-          const payload = { ...v, teacher_id: v.teacher_id || null, meeting_link: v.meeting_link || null }
+          const payload = {
+            ...v,
+            teacher_id: v.teacher_id || null,
+            meeting_link: v.meeting_link || null,
+            biweekly_start_date: v.frequency === 'biweekly' ? (v.biweekly_start_date || null) : null,
+          }
           if (selected) {
             updateMutation.mutate({ id: selected.id, data: payload })
           } else {

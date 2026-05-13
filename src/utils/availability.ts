@@ -40,17 +40,33 @@ export function teacherMatchesClass(
   })
 }
 
+/** Returns true if two biweekly classes fall on strictly alternating weeks. */
+function biweeklyAlternates(dateA: string | null | undefined, dateB: string | null | undefined): boolean {
+  if (!dateA || !dateB) return false
+  const a = new Date(dateA + 'T00:00:00')
+  const b = new Date(dateB + 'T00:00:00')
+  return Math.abs(Math.round((a.getTime() - b.getTime()) / 86_400_000)) % 14 === 7
+}
+
 /**
  * Returns the first conflicting class/entry if any schedule entry overlaps with an existing class.
  * Excludes `excludeClassId` (the class being edited).
+ * Two biweekly classes on alternating weeks are never considered a conflict.
  */
 export function findTeacherScheduleConflict(
   teacherClasses: Class[],
   newSchedule: ClassScheduleEntry[],
+  newFrequency: string,
+  newBiweeklyStartDate: string | null | undefined,
   excludeClassId?: string,
 ): { className: string; day: string; start: string; end: string } | null {
   for (const cls of teacherClasses) {
     if (cls.id === excludeClassId) continue
+    if (
+      newFrequency === 'biweekly' &&
+      cls.frequency === 'biweekly' &&
+      biweeklyAlternates(newBiweeklyStartDate, cls.biweekly_start_date)
+    ) continue
     for (const ex of cls.schedule) {
       for (const ne of newSchedule) {
         if (ex.day !== ne.day || !ne.start_time || !ne.end_time) continue
