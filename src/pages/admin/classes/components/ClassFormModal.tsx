@@ -131,10 +131,16 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
 
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField select label="Professor" fullWidth {...register('teacher_id')} defaultValue="">
-                <MenuItem value="">Sem professor</MenuItem>
-                {teachers.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-              </TextField>
+              <Controller
+                name="teacher_id"
+                control={control}
+                render={({ field }) => (
+                  <TextField select label="Professor" fullWidth {...field} value={field.value ?? ''}>
+                    <MenuItem value="">Sem professor</MenuItem>
+                    {teachers.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </TextField>
+                )}
+              />
               {selectedTeacher?.is_training && (
                 <Alert severity="warning" sx={{ mt: 1 }}>Este professor está em treinamento.</Alert>
               )}
