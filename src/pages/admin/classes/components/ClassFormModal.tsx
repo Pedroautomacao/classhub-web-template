@@ -15,7 +15,7 @@ import { studentsApi } from '@/api/students.api'
 import { settingsApi } from '@/api/settings.api'
 import { studentMatchesClass, teacherMatchesClass, findTeacherScheduleConflict, DAYS } from '@/utils/availability'
 import { classesApi } from '@/api/classes.api'
-import type { Class } from '@/types'
+import type { Class, Teacher, Student } from '@/types'
 
 
 const scheduleEntrySchema = z.object({
@@ -61,10 +61,8 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
 
   const isEdit = !!cls
-  const { data: teachersData } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list({ page_size: 9999 }) })
-  const teachers = teachersData?.items ?? []
-  const { data: studentsData } = useQuery({ queryKey: ['students'], queryFn: () => studentsApi.list({ page_size: 9999 }) })
-  const students = studentsData?.items ?? []
+  const { data: teachers = [] } = useQuery<Teacher[]>({ queryKey: ['teachers'], queryFn: () => teachersApi.list() })
+  const { data: students = [] } = useQuery<Student[]>({ queryKey: ['students'], queryFn: () => studentsApi.list() })
 
   const { data: settingsData } = useQuery({
     queryKey: ['settings'],
@@ -85,7 +83,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedLevels = watch('levels') ?? []
   const watchedFrequency = watch('frequency')
   const watchedBiweeklyStartDate = watch('biweekly_start_date')
-  const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
+  const selectedTeacher = teachers.find((t: Teacher) => t.id === watchedTeacherId)
 
   // Derived day of week from the biweekly start date
   const biweeklyDay: DayValue | null =
@@ -100,23 +98,23 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   // When biweekly start date changes, lock all schedule entries to the derived day
   useEffect(() => {
     if (biweeklyDay) {
-      watchedSchedule.forEach((_, i) => {
+      watchedSchedule.forEach((_: unknown, i: number) => {
         setValue(`schedule.${i}.day`, biweeklyDay, { shouldValidate: false })
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [biweeklyDay])
 
-  const { data: allClassesData } = useQuery({
+  const { data: allClasses = [] } = useQuery<Class[]>({
     queryKey: ['classes', 'all-for-conflict'],
-    queryFn: () => classesApi.list({ page_size: 9999 }),
+    queryFn: () => classesApi.list(),
     staleTime: 30_000,
   })
   const teacherClasses = watchedTeacherId
-    ? (allClassesData?.items ?? []).filter((c: Class) => c.teacher_id === watchedTeacherId)
+    ? allClasses.filter((c: Class) => c.teacher_id === watchedTeacherId)
     : []
 
-  const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
+  const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e: { start_time: string }) => e.start_time)
 
   const teacherScheduleConflict = classInfoReady && teacherClasses.length > 0
     ? findTeacherScheduleConflict(
@@ -129,13 +127,13 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
 
   const conflictingStudents = classInfoReady
     ? students.filter(
-        (s) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
+        (s: Student) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
       )
     : []
 
   const levelMismatchStudents = watchedLevels.length > 0
     ? students.filter(
-        (s) => watchedStudentIds.includes(s.id) && !!s.level && !watchedLevels.includes(s.level),
+        (s: Student) => watchedStudentIds.includes(s.id) && !!s.level && !watchedLevels.includes(s.level),
       )
     : []
 
@@ -189,7 +187,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 render={({ field }) => (
                   <TextField select label="Professor" fullWidth {...field} value={field.value ?? ''}>
                     <MenuItem value="">Sem professor</MenuItem>
-                    {teachers.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                    {teachers.map((t: Teacher) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                   </TextField>
                 )}
               />
@@ -298,8 +296,8 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             {errors.schedule?.root && (
               <Typography variant="caption" color="error">{errors.schedule.root.message}</Typography>
             )}
-            {errors.schedule && !Array.isArray(errors.schedule) && (errors.schedule as any).message && (
-              <Typography variant="caption" color="error">{(errors.schedule as any).message}</Typography>
+            {errors.schedule && !Array.isArray(errors.schedule) && (errors.schedule as { message?: string }).message && (
+              <Typography variant="caption" color="error">{(errors.schedule as { message?: string }).message}</Typography>
             )}
 
             {/* Biweekly without date: prompt user to pick date first */}
@@ -366,7 +364,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                       size="small"
                       slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: watchedSchedule[index]?.start_time || '' } }}
                       error={!!errors.schedule?.[index]?.end_time}
-                      helperText={(errors.schedule?.[index]?.end_time as any)?.message}
+                      helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
                       {...register(`schedule.${index}.end_time`)}
                       sx={{ width: 120 }}
                     />
@@ -392,11 +390,11 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               <Autocomplete
                 multiple
                 options={students}
-                getOptionLabel={(o) => o.full_name}
-                isOptionEqualToValue={(o, v) => o.id === v.id}
-                value={students.filter((s) => (field.value ?? []).includes(s.id))}
-                onChange={(_, newValue) => field.onChange(newValue.map((s) => s.id))}
-                renderOption={(props, option) => {
+                getOptionLabel={(o: Student) => o.full_name}
+                isOptionEqualToValue={(o: Student, v: Student) => o.id === v.id}
+                value={students.filter((s: Student) => (field.value ?? []).includes(s.id))}
+                onChange={(_, newValue) => field.onChange((newValue as Student[]).map((s) => s.id))}
+                renderOption={(props, option: Student) => {
                   const conflict = classInfoReady && !studentMatchesClass(option.availability, watchedSchedule)
                   return (
                     <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -422,14 +420,14 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             <Alert severity="warning">
               {conflictingStudents.length === 1
                 ? `${conflictingStudents[0].full_name} não marcou disponibilidade neste turno.`
-                : `${conflictingStudents.map((s) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
+                : `${conflictingStudents.map((s: Student) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
             </Alert>
           )}
           {levelMismatchStudents.length > 0 && (
             <Alert severity="warning">
               {levelMismatchStudents.length === 1
                 ? `${levelMismatchStudents[0].full_name} tem nível ${levelMismatchStudents[0].level}, diferente do(s) nível(is) da turma.`
-                : `${levelMismatchStudents.map((s) => s.full_name).join(', ')} têm níveis diferentes dos desta turma.`}
+                : `${levelMismatchStudents.map((s: Student) => s.full_name).join(', ')} têm níveis diferentes dos desta turma.`}
             </Alert>
           )}
         </Stack>
