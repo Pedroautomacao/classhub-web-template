@@ -243,8 +243,50 @@ const TIME_W = 52
 const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i) // 0–23
 const TOTAL_H = 24 * HOUR_PX
 
-// Convert JS getDay() (0=Sun) to DAYS_ORDER index
 function jsDayToIndex(d: number) { return d === 0 ? 6 : d - 1 }
+
+function isBiweeklyActive(startDate: string | null | undefined): boolean {
+  if (!startDate) return true
+  const ref = new Date(startDate + 'T00:00:00')
+  const spNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+  const spToday = new Date(spNow.getFullYear(), spNow.getMonth(), spNow.getDate())
+  const daysDiff = Math.floor((spToday.getTime() - ref.getTime()) / 86_400_000)
+  if (daysDiff < 0) return false
+  return Math.floor(daysDiff / 7) % 2 === 0
+}
+
+type BaseEntry = { cls: Class; colorIdx: number; startMin: number; endMin: number }
+type AssignedEntry = BaseEntry & { colIdx: number; colCount: number }
+
+function assignColumns(entries: BaseEntry[]): AssignedEntry[] {
+  const sorted = [...entries].sort((a, b) => a.startMin - b.startMin)
+  const result: AssignedEntry[] = sorted.map(e => ({ ...e, colIdx: 0, colCount: 1 }))
+  const visited = new Set<number>()
+  for (let i = 0; i < result.length; i++) {
+    if (visited.has(i)) continue
+    const group: number[] = [i]
+    visited.add(i)
+    for (let gi = 0; gi < group.length; gi++) {
+      const a = result[group[gi]]
+      for (let j = 0; j < result.length; j++) {
+        if (!visited.has(j) && a.startMin < result[j].endMin && result[j].startMin < a.endMin) {
+          group.push(j); visited.add(j)
+        }
+      }
+    }
+    if (group.length > 1) {
+      const cols: number[] = []
+      group.map(idx => result[idx]).sort((a, b) => a.startMin - b.startMin).forEach(e => {
+        let col = cols.findIndex(end => end <= e.startMin)
+        if (col === -1) { col = cols.length; cols.push(0) }
+        cols[col] = e.endMin
+        e.colIdx = col
+      })
+      group.forEach(idx => { result[idx].colCount = cols.length })
+    }
+  }
+  return result
+}
 
 function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClick: (cls: Class) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -360,21 +402,24 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
                 ))}
 
                 {/* Class blocks */}
-                {(byDay[day] ?? []).map(({ cls, colorIdx, startMin, endMin }) => {
+                {assignColumns(byDay[day] ?? []).map(({ cls, colorIdx, startMin, endMin, colIdx, colCount }) => {
                   const top = startMin * (HOUR_PX / 60) + 2
                   const height = Math.max((endMin - startMin) * (HOUR_PX / 60) - 4, 24)
                   const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
+                  const isActive = cls.frequency !== 'biweekly' || isBiweeklyActive(cls.biweekly_start_date)
+                  const pct = (idx: number) => `calc((100% - 8px) / ${colCount} * ${idx} + 4px)`
                   return (
                     <Box key={`${cls.id}-${startMin}`} sx={{
                       position: 'absolute',
                       top,
                       height,
-                      left: 4,
-                      right: 4,
+                      left: pct(colIdx),
+                      width: `calc((100% - 8px) / ${colCount})`,
                       bgcolor: color.bg,
                       color: color.text,
+                      opacity: isActive ? 1 : 0.4,
                       borderRadius: 1,
-                      px: 1,
+                      px: 0.75,
                       py: 0.25,
                       overflow: 'hidden',
                       cursor: 'pointer',
