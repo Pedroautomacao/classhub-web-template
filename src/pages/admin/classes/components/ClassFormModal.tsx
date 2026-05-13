@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,7 +8,7 @@ import {
   useMediaQuery, useTheme, Alert, Autocomplete, Tooltip,
   Typography, IconButton, Box, Divider, Chip,
 } from '@mui/material'
-import { Warning, Add, Delete, Error, Lock } from '@mui/icons-material'
+import { Warning, Add, Delete, Error } from '@mui/icons-material'
 import { TimePickerField } from '@/components/common/TimePickerField'
 import { DatePickerField } from '@/components/common/DatePickerField'
 import { useQuery } from '@tanstack/react-query'
@@ -55,6 +55,7 @@ type FormValues = z.infer<typeof schema>
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 type DayValue = typeof DAY_NAMES[number]
+type BiweeklyDay = { value: DayValue; label: string; shortLabel: string; dateNum: number }
 
 function getDayFromDate(dateStr: string): DayValue {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -83,7 +84,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   })
   const availableLevels = settingsData?.level_options ?? []
 
-  const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { schedule: [{ day: 'monday', start_time: '', end_time: '' }], levels: [] },
   })
@@ -108,15 +109,35 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
     ? (DAYS.find((d) => d.value === biweeklyDay)?.label ?? '')
     : ''
 
-  // When biweekly start date changes, lock all schedule entries to the derived day
-  useEffect(() => {
-    if (biweeklyDay) {
-      watchedSchedule.forEach((_: unknown, i: number) => {
-        setValue(`schedule.${i}.day`, biweeklyDay, { shouldValidate: false })
-      })
+  const biweeklyWeekDates = useMemo((): BiweeklyDay[] => {
+    if (!watchedBiweeklyStartDate) return []
+    const [y, m, d] = watchedBiweeklyStartDate.split('-').map(Number)
+    const dow = new Date(y, m - 1, d).getDay()
+    const shortLabels: Record<string, string> = {
+      sunday: 'Dom', monday: 'Seg', tuesday: 'Ter', wednesday: 'Qua',
+      thursday: 'Qui', friday: 'Sex', saturday: 'Sáb',
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [biweeklyDay])
+    return DAY_NAMES.map((dayVal, i) => {
+      const dayDate = new Date(y, m - 1, d - dow + i)
+      return {
+        value: dayVal as DayValue,
+        label: DAYS.find((x) => x.value === dayVal)?.label ?? '',
+        shortLabel: shortLabels[dayVal],
+        dateNum: dayDate.getDate(),
+      }
+    })
+  }, [watchedBiweeklyStartDate])
+
+  const handleToggleBiweeklyDay = (dayVal: DayValue) => {
+    const indices = watchedSchedule
+      .map((e: { day: string }, i: number) => (e.day === dayVal ? i : -1))
+      .filter((i: number) => i >= 0)
+    if (indices.length > 0) {
+      ;[...indices].reverse().forEach((i: number) => remove(i))
+    } else {
+      append({ day: dayVal, start_time: '', end_time: '' })
+    }
+  }
 
   const { data: allClasses = [] } = useQuery<Class[]>({
     queryKey: ['classes', 'all-for-conflict'],
@@ -182,7 +203,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const isBiweekly = watchedFrequency === 'biweekly'
 
   const handleAddSlot = () => {
-    append({ day: biweeklyDay ?? 'monday', start_time: '', end_time: '' })
+    append({ day: 'monday', start_time: '', end_time: '' })
   }
 
   return (
@@ -290,23 +311,12 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
           {/* Schedule section */}
           <Box>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {isBiweekly ? 'Horários *' : 'Dias e Horários *'}
-                </Typography>
-                {isBiweekly && biweeklyDayLabel && (
-                  <Chip
-                    icon={<Lock sx={{ fontSize: '14px !important' }} />}
-                    label={biweeklyDayLabel}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                )}
-              </Stack>
-              {(!isBiweekly || biweeklyDay) && (
+              <Typography variant="subtitle2" fontWeight={600}>
+                Dias e Horários *
+              </Typography>
+              {!isBiweekly && (
                 <Button size="small" startIcon={<Add />} onClick={handleAddSlot}>
-                  {isBiweekly ? 'Adicionar Horário' : 'Adicionar Dia'}
+                  Adicionar Dia
                 </Button>
               )}
             </Stack>
@@ -318,42 +328,107 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               <Typography variant="caption" color="error">{(errors.schedule as { message?: string }).message}</Typography>
             )}
 
-            {/* Biweekly without date: prompt user to pick date first */}
-            {isBiweekly && !biweeklyDay ? (
-              <Alert severity="info" sx={{ mt: 1 }}>
-                Selecione a data da 1ª aula acima para definir o dia da semana e cadastrar os horários.
-              </Alert>
+            {isBiweekly ? (
+              /* Biweekly: chip day selector + per-day time slots */
+              !watchedBiweeklyStartDate ? (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Selecione a data da 1ª aula acima para definir a semana e cadastrar os horários.
+                </Alert>
+              ) : (
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                    {biweeklyWeekDates.map((wd) => {
+                      const isSelected = watchedSchedule.some((e: { day: string }) => e.day === wd.value)
+                      return (
+                        <Chip
+                          key={wd.value}
+                          label={`${wd.shortLabel} ${wd.dateNum}`}
+                          size="small"
+                          clickable
+                          color={isSelected ? 'primary' : 'default'}
+                          variant={isSelected ? 'filled' : 'outlined'}
+                          onClick={() => handleToggleBiweeklyDay(wd.value)}
+                        />
+                      )
+                    })}
+                  </Stack>
+                  {biweeklyWeekDates
+                    .filter((wd) => watchedSchedule.some((e: { day: string }) => e.day === wd.value))
+                    .map((wd) => {
+                      const dayIndices = fields
+                        .map((_f: unknown, i: number) => (watchedSchedule[i]?.day === wd.value ? i : -1))
+                        .filter((i: number) => i >= 0)
+                      return (
+                        <Box key={wd.value}>
+                          <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                            {wd.label}
+                          </Typography>
+                          <Stack spacing={1}>
+                            {dayIndices.map((index: number) => (
+                              <Stack key={fields[index].id} direction="row" spacing={1} alignItems="flex-start">
+                                <Controller
+                                  name={`schedule.${index}.start_time`}
+                                  control={control}
+                                  render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                                    <TimePickerField
+                                      label="Início"
+                                      value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      error={!!errors.schedule?.[index]?.start_time}
+                                      helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                                      sx={{ width: 130 }}
+                                    />
+                                  )}
+                                />
+                                <Controller
+                                  name={`schedule.${index}.end_time`}
+                                  control={control}
+                                  render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                                    <TimePickerField
+                                      label="Término"
+                                      value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      min={watchedSchedule[index]?.start_time || undefined}
+                                      error={!!errors.schedule?.[index]?.end_time}
+                                      helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                                      sx={{ width: 130 }}
+                                    />
+                                  )}
+                                />
+                                <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 3 }}>
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            ))}
+                            <Button
+                              size="small"
+                              startIcon={<Add />}
+                              sx={{ alignSelf: 'flex-start' }}
+                              onClick={() => append({ day: wd.value, start_time: '', end_time: '' })}
+                            >
+                              Adicionar horário
+                            </Button>
+                          </Stack>
+                        </Box>
+                      )
+                    })}
+                </Stack>
+              )
             ) : (
+              /* Weekly: day dropdown (with label above for alignment) + time pickers */
               <Stack spacing={1.5}>
                 {fields.map((field, index) => (
                   <Stack key={field.id} direction="row" spacing={1} alignItems="flex-start">
-                    {isBiweekly ? (
-                      /* Locked day display for biweekly */
-                      <Box sx={{
-                        minWidth: 150,
-                        height: 40,
-                        border: 1,
-                        borderColor: 'action.disabled',
-                        borderRadius: 1,
-                        px: 1.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        bgcolor: 'action.disabledBackground',
-                        flexShrink: 0,
-                      }}>
-                        <Typography variant="body2" color="text.disabled" noWrap>
-                          {biweeklyDayLabel}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      /* Editable day dropdown for weekly */
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                        Dia
+                      </Typography>
                       <Controller
                         name={`schedule.${index}.day`}
                         control={control}
                         render={({ field: f }) => (
                           <TextField
                             select
-                            label="Dia"
                             size="small"
                             value={f.value}
                             onChange={f.onChange}
@@ -366,7 +441,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                           </TextField>
                         )}
                       />
-                    )}
+                    </Box>
                     <Controller
                       name={`schedule.${index}.start_time`}
                       control={control}
@@ -397,7 +472,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                       )}
                     />
                     {fields.length > 1 && (
-                      <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 0.5 }}>
+                      <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 3 }}>
                         <Delete fontSize="small" />
                       </IconButton>
                     )}
