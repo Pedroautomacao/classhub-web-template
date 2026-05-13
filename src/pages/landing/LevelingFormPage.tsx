@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -27,6 +27,7 @@ import { CheckCircle, School } from '@mui/icons-material'
 import { levelingApi } from '@/api/leveling.api'
 import { levelingTemplatesApi } from '@/api/leveling-templates.api'
 import { settingsApi } from '@/api/settings.api'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import type { TemplateQuestion } from '@/types'
 
 // ── Personal info schema (fixed) ─────────────────────────────────────────────
@@ -143,6 +144,7 @@ export function LevelingFormPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<PersonalValues>({
     resolver: zodResolver(personalSchema),
@@ -264,12 +266,17 @@ export function LevelingFormPage() {
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Data de nascimento (opcional)"
-                  type="date"
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  {...register('birth_date')}
+                <Controller
+                  name="birth_date"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Data de nascimento (opcional)"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>

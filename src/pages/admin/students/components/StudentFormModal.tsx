@@ -23,6 +23,7 @@ import {
 } from '@mui/material'
 import { Download, InsertDriveFile } from '@mui/icons-material'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { contractsApi } from '@/api/contracts.api'
 import { filesApi, downloadBase64File } from '@/api/files.api'
 import { settingsApi } from '@/api/settings.api'
@@ -153,12 +154,17 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
               <TextField label="CPF" fullWidth {...register('cpf')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="Data de nascimento"
-                type="date"
-                fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-                {...register('birth_date')}
+              <Controller
+                name="birth_date"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerField
+                    label="Data de nascimento"
+                    fullWidth
+                    value={field.value || null}
+                    onChange={(v) => field.onChange(v ?? '')}
+                  />
+                )}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>

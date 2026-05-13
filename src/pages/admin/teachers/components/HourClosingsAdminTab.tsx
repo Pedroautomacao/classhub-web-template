@@ -12,6 +12,7 @@ import { InfoOutlined } from '@mui/icons-material'
 import dayjs from 'dayjs'
 import { hourClosingsApi } from '@/api/hour-closings.api'
 import { teachersApi } from '@/api/teachers.api'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
 import type { HourClosing, HourClosingStatus, Teacher } from '@/types'
@@ -179,10 +180,20 @@ export function HourClosingsAdminTab() {
           renderInput={(params) => <TextField {...params} label="Professor" size="small" />}
           sx={{ minWidth: 200 }}
         />
-        <TextField label="De" type="date" size="small" value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 150 }} />
-        <TextField label="Até" type="date" size="small" value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 150 }} />
+        <DatePickerField
+          label="De"
+          size="small"
+          value={dateFrom || null}
+          onChange={(v) => setDateFrom(v ?? '')}
+          sx={{ minWidth: 150 }}
+        />
+        <DatePickerField
+          label="Até"
+          size="small"
+          value={dateTo || null}
+          onChange={(v) => setDateTo(v ?? '')}
+          sx={{ minWidth: 150 }}
+        />
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>Status</InputLabel>
           <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as any)}>

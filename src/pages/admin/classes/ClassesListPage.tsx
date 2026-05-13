@@ -11,6 +11,7 @@ import { DataTable, type Column } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { ClassFormModal } from './components/ClassFormModal'
 import { LiveClassesTab } from './components/LiveClassesTab'
+import { TimePickerField } from '@/components/common/TimePickerField'
 import { classesApi, type ClassPayload } from '@/api/classes.api'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -238,13 +239,11 @@ export function ClassesListPage() {
               <MenuItem value="">Todos</MenuItem>
               {DAYS.map((d) => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
             </TextField>
-            <TextField
+            <TimePickerField
               label="Horário de início"
-              type="time"
               size="small"
               value={filterStartTime}
-              onChange={(e) => setFilterStartTime(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
+              onChange={setFilterStartTime}
               sx={{ minWidth: 140 }}
             />
             <TextField

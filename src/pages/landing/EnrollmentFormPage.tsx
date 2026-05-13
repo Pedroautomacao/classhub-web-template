@@ -24,6 +24,7 @@ import {
 import { CheckCircle, School } from '@mui/icons-material'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
+import { DatePickerField } from '@/components/common/DatePickerField'
 
 const PAYMENT_METHODS = [
   { value: 'credit_card', label: 'Cartão de crédito — Assinatura' },
@@ -172,12 +173,17 @@ export function EnrollmentFormPage() {
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Data de nascimento (opcional)"
-                  type="date"
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  {...register('birth_date')}
+                <Controller
+                  name="birth_date"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Data de nascimento (opcional)"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -231,14 +237,19 @@ export function EnrollmentFormPage() {
                 </TextField>
               </Grid>
               <Grid size={{ xs: 12, sm: 5 }}>
-                <TextField
-                  label="Data de cobrança *"
-                  type="date"
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  error={!!errors.start_date}
-                  helperText={errors.start_date?.message}
-                  {...register('start_date')}
+                <Controller
+                  name="start_date"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Data de cobrança *"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                      error={!!errors.start_date}
+                      helperText={errors.start_date?.message}
+                    />
+                  )}
                 />
               </Grid>
             </Grid>

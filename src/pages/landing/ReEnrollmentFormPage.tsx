@@ -22,6 +22,7 @@ import {
 import { CheckCircle, School, Search, Person } from '@mui/icons-material'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import type { StudentLookupResult } from '@/types'
 
 function maskCpf(value: string) {
@@ -276,14 +277,19 @@ export function ReEnrollmentFormPage() {
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Data de nascimento *"
-                      type="date"
-                      fullWidth
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      error={!!errors.birth_date}
-                      helperText={errors.birth_date?.message}
-                      {...register('birth_date')}
+                    <Controller
+                      name="birth_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePickerField
+                          label="Data de nascimento *"
+                          fullWidth
+                          value={field.value || null}
+                          onChange={(v) => field.onChange(v ?? '')}
+                          error={!!errors.birth_date}
+                          helperText={errors.birth_date?.message}
+                        />
+                      )}
                     />
                   </Grid>
                 </Grid>
@@ -331,14 +337,19 @@ export function ReEnrollmentFormPage() {
                     </TextField>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      label="Data de cobrança *"
-                      type="date"
-                      fullWidth
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      error={!!errors.start_date}
-                      helperText={errors.start_date?.message}
-                      {...register('start_date')}
+                    <Controller
+                      name="start_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePickerField
+                          label="Data de cobrança *"
+                          fullWidth
+                          value={field.value || null}
+                          onChange={(v) => field.onChange(v ?? '')}
+                          error={!!errors.start_date}
+                          helperText={errors.start_date?.message}
+                        />
+                      )}
                     />
                   </Grid>
                 </Grid>

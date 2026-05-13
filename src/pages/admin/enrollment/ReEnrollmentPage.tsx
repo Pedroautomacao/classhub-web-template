@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -10,6 +10,7 @@ import {
   Autocomplete,
 } from '@mui/material'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { PageHeader } from '@/components/common/PageHeader'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
@@ -127,7 +128,20 @@ export function ReEnrollmentPage() {
               <TextField label="Dia de vencimento *" type="number" fullWidth error={!!errors.payment_day} helperText={errors.payment_day?.message} {...register('payment_day', { valueAsNumber: true })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Data de cobrança *" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} error={!!errors.start_date} helperText={errors.start_date?.message} {...register('start_date')} />
+              <Controller
+                name="start_date"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerField
+                    label="Data de cobrança *"
+                    fullWidth
+                    value={field.value || null}
+                    onChange={(v) => field.onChange(v ?? '')}
+                    error={!!errors.start_date}
+                    helperText={errors.start_date?.message}
+                  />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField label="Carência (dias)" type="number" fullWidth {...register('grace_period_days', { valueAsNumber: true })} />

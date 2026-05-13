@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 import { Save, UploadFile, Delete, Add } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
@@ -142,10 +143,32 @@ export function SettingsPage() {
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="Início do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_start')} />
+                <Controller
+                  name="semester_start"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Início do semestre"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  )}
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="Fim do semestre" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('semester_end')} />
+                <Controller
+                  name="semester_end"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Fim do semestre"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  )}
+                />
               </Grid>
             </Grid>
 

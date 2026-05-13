@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import {
 } from '@mui/material'
 import { UploadFile, InsertDriveFile, Close } from '@mui/icons-material'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { PageHeader } from '@/components/common/PageHeader'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
@@ -133,7 +134,18 @@ export function EnrollmentPage() {
               <TextField label="CPF" fullWidth {...register('cpf')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Data de nascimento" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('birth_date')} />
+              <Controller
+                name="birth_date"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerField
+                    label="Data de nascimento"
+                    fullWidth
+                    value={field.value || null}
+                    onChange={(v) => field.onChange(v ?? '')}
+                  />
+                )}
+              />
             </Grid>
           </Grid>
 
@@ -158,7 +170,20 @@ export function EnrollmentPage() {
               <TextField label="Dia de vencimento *" type="number" fullWidth error={!!errors.payment_day} helperText={errors.payment_day?.message} {...register('payment_day', { valueAsNumber: true })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Data de cobrança *" type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }} error={!!errors.start_date} helperText={errors.start_date?.message} {...register('start_date')} />
+              <Controller
+                name="start_date"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerField
+                    label="Data de cobrança *"
+                    fullWidth
+                    value={field.value || null}
+                    onChange={(v) => field.onChange(v ?? '')}
+                    error={!!errors.start_date}
+                    helperText={errors.start_date?.message}
+                  />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
