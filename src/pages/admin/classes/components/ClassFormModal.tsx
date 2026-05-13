@@ -9,6 +9,8 @@ import {
   Typography, IconButton, Box, Divider, Chip,
 } from '@mui/material'
 import { Warning, Add, Delete, Error, Lock } from '@mui/icons-material'
+import { TimePickerField } from '@/components/common/TimePickerField'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { useQuery } from '@tanstack/react-query'
 import { teachersApi } from '@/api/teachers.api'
 import { studentsApi } from '@/api/students.api'
@@ -237,14 +239,19 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             </Grid>
             {isBiweekly && (
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Data da 1ª aula *"
-                  type="date"
-                  fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  helperText={biweeklyDayLabel ? `Dia da semana: ${biweeklyDayLabel}` : 'O dia da semana será definido por esta data.'}
-                  error={!!errors.biweekly_start_date}
-                  {...register('biweekly_start_date')}
+                <Controller<FormValues, 'biweekly_start_date'>
+                  name="biweekly_start_date"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Data da 1ª aula *"
+                      fullWidth
+                      value={field.value || null}
+                      onChange={(v) => field.onChange(v ?? '')}
+                      error={!!errors.biweekly_start_date}
+                      helperText={biweeklyDayLabel ? `Dia da semana: ${biweeklyDayLabel}` : 'O dia da semana será definido por esta data.'}
+                    />
+                  )}
                 />
               </Grid>
             )}
@@ -360,25 +367,34 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                         )}
                       />
                     )}
-                    <TextField
-                      label="Início"
-                      type="time"
-                      size="small"
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      error={!!errors.schedule?.[index]?.start_time}
-                      helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
-                      {...register(`schedule.${index}.start_time`)}
-                      sx={{ width: 120 }}
+                    <Controller
+                      name={`schedule.${index}.start_time`}
+                      control={control}
+                      render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                        <TimePickerField
+                          label="Início"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          error={!!errors.schedule?.[index]?.start_time}
+                          helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                          sx={{ width: 130 }}
+                        />
+                      )}
                     />
-                    <TextField
-                      label="Término"
-                      type="time"
-                      size="small"
-                      slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: watchedSchedule[index]?.start_time || '' } }}
-                      error={!!errors.schedule?.[index]?.end_time}
-                      helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
-                      {...register(`schedule.${index}.end_time`)}
-                      sx={{ width: 120 }}
+                    <Controller
+                      name={`schedule.${index}.end_time`}
+                      control={control}
+                      render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                        <TimePickerField
+                          label="Término"
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          min={watchedSchedule[index]?.start_time || undefined}
+                          error={!!errors.schedule?.[index]?.end_time}
+                          helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                          sx={{ width: 130 }}
+                        />
+                      )}
                     />
                     {fields.length > 1 && (
                       <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 0.5 }}>

@@ -10,6 +10,8 @@ import {
   Typography, Divider, Paper,
 } from '@mui/material'
 import { Edit, Cancel, Add, Delete, InfoOutlined, CheckCircleOutline, HourglassEmpty, DoDisturbAlt } from '@mui/icons-material'
+import { TimePickerField } from '@/components/common/TimePickerField'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { teachersApi } from '@/api/teachers.api'
 import { hourClosingsApi } from '@/api/hour-closings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -218,17 +220,16 @@ function NewClosingForm() {
             </Typography>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="Início do período *" type="date" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                <DatePickerField
+                  label="Início do período *" fullWidth size="small"
+                  value={dateFrom || null} onChange={(v) => setDateFrom(v ?? '')}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="Fim do período *" type="date" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                <DatePickerField
+                  label="Fim do período *" fullWidth size="small"
+                  value={dateTo || null} onChange={(v) => setDateTo(v ?? '')}
+                  minDate={dateFrom || undefined}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
@@ -253,10 +254,10 @@ function NewClosingForm() {
             </Typography>
             <Grid container spacing={1.5} alignItems="flex-end">
               <Grid size={{ xs: 12, sm: 3 }}>
-                <TextField
-                  label="Data da aula *" type="date" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  value={sessionDate} onChange={(e) => handleDateChange(e.target.value)}
+                <DatePickerField
+                  label="Data da aula *" fullWidth size="small"
+                  value={sessionDate || null}
+                  onChange={(v) => v ? handleDateChange(v) : handleDateChange('')}
                   helperText=" "
                 />
               </Grid>
@@ -288,19 +289,24 @@ function NewClosingForm() {
                 </Grid>
               )}
               <Grid size={{ xs: 6, sm: specialType ? 1 : 2 }}>
-                <TextField
-                  label="Início *" type="time" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  value={sessionStart} onChange={(e) => setSessionStart(e.target.value)}
+                <TimePickerField
+                  label="Início *"
+                  value={sessionStart}
+                  onChange={setSessionStart}
                   helperText=" "
+                  size="small"
+                  sx={{ width: '100%' }}
                 />
               </Grid>
               <Grid size={{ xs: 6, sm: specialType ? 1 : 2 }}>
-                <TextField
-                  label="Término *" type="time" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: sessionStart || '' } }}
-                  value={sessionEnd} onChange={(e) => setSessionEnd(e.target.value)}
+                <TimePickerField
+                  label="Término *"
+                  value={sessionEnd}
+                  onChange={setSessionEnd}
+                  min={sessionStart || undefined}
                   helperText=" "
+                  size="small"
+                  sx={{ width: '100%' }}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 2 }}>
@@ -496,10 +502,10 @@ export function HourClosingsTab() {
       </Typography>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2} alignItems="center">
-        <TextField label="De" type="date" size="small" value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 150 }} />
-        <TextField label="Até" type="date" size="small" value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 150 }} />
+        <DatePickerField label="De" size="small" value={dateFrom || null}
+          onChange={(v) => setDateFrom(v ?? '')} sx={{ minWidth: 150 }} />
+        <DatePickerField label="Até" size="small" value={dateTo || null}
+          onChange={(v) => setDateTo(v ?? '')} minDate={dateFrom || undefined} sx={{ minWidth: 150 }} />
         <TextField
           select label="Status" size="small" value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as HourClosingStatus | '')}

@@ -1,11 +1,12 @@
 import { useFieldArray, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import {
-  Box, Stack, Typography, Button, TextField, IconButton,
+  Box, Stack, Typography, Button, IconButton,
   Tooltip, Select, MenuItem, InputLabel, FormControl,
 } from '@mui/material'
 import { Add, Delete as DeleteIcon } from '@mui/icons-material'
 import { DAYS } from '@/utils/availability'
+import { TimePickerField } from './TimePickerField'
 
 export const availabilitySlotSchema = z.object({
   start: z.string().min(1, 'Obrigatório'),
@@ -124,30 +125,41 @@ function AvailabilityDayRow({ dayIndex, control, register, watch, errors, usedDa
         {slotFields.map((slotField, slotIndex) => {
           const slotStart = watch(`availability.${dayIndex}.slots.${slotIndex}.start`)
           return (
-          <Stack key={slotField.id} direction="row" spacing={1} alignItems="center">
-            <TextField
-              label="Início"
-              type="time"
-              size="small"
-              slotProps={{ inputLabel: { shrink: true } }}
-              error={!!errors.availability?.[dayIndex]?.slots?.[slotIndex]?.start}
-              {...register(`availability.${dayIndex}.slots.${slotIndex}.start`)}
-              sx={{ width: 130 }}
+          <Stack key={slotField.id} direction="row" spacing={1} alignItems="flex-start">
+            <Controller
+              name={`availability.${dayIndex}.slots.${slotIndex}.start`}
+              control={control}
+              render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                <TimePickerField
+                  label="Início"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  error={!!errors.availability?.[dayIndex]?.slots?.[slotIndex]?.start}
+                  size="small"
+                  sx={{ width: 130 }}
+                />
+              )}
             />
-            <Typography variant="body2" color="text.secondary">até</Typography>
-            <TextField
-              label="Fim"
-              type="time"
-              size="small"
-              slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: slotStart || '' } }}
-              error={!!errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end}
-              helperText={(errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end as any)?.message}
-              {...register(`availability.${dayIndex}.slots.${slotIndex}.end`)}
-              sx={{ width: 130 }}
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>até</Typography>
+            <Controller
+              name={`availability.${dayIndex}.slots.${slotIndex}.end`}
+              control={control}
+              render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                <TimePickerField
+                  label="Fim"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  min={slotStart || undefined}
+                  error={!!errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end}
+                  helperText={(errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end as any)?.message}
+                  size="small"
+                  sx={{ width: 130 }}
+                />
+              )}
             />
             {slotFields.length > 1 && (
               <Tooltip title="Remover horário">
-                <IconButton size="small" onClick={() => removeSlot(slotIndex)}>
+                <IconButton size="small" onClick={() => removeSlot(slotIndex)} sx={{ mt: 2.75 }}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
