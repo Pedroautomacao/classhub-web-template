@@ -82,7 +82,7 @@ interface DayRowProps {
   onRemoveDay: () => void
 }
 
-function AvailabilityDayRow({ dayIndex, control, register, watch, errors, usedDays, onRemoveDay }: DayRowProps) {
+function AvailabilityDayRow({ dayIndex, control, register: _register, watch, errors, usedDays, onRemoveDay }: DayRowProps) {
   const { fields: slotFields, append: appendSlot, remove: removeSlot } = useFieldArray({
     control,
     name: `availability.${dayIndex}.slots`,
