@@ -71,11 +71,14 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedLevels = watch('levels') ?? []
   const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
 
-  const { data: teacherClasses = [] } = useQuery({
-    queryKey: ['classes', 'teacher', watchedTeacherId],
-    queryFn: () => classesApi.list({ teacher_id: watchedTeacherId! }),
-    enabled: !!watchedTeacherId,
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ['classes', 'all-for-conflict'],
+    queryFn: () => classesApi.list(),
+    staleTime: 30_000,
   })
+  const teacherClasses = watchedTeacherId
+    ? allClasses.filter((c: Class) => c.teacher_id === watchedTeacherId)
+    : []
 
   const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
 
