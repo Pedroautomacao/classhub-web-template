@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Box, IconButton, Stack, Typography } from '@mui/material'
+import { Box, IconButton, MenuItem, Select, Stack, Typography } from '@mui/material'
 import { ChevronLeft, ChevronRight } from '@mui/icons-material'
 import { alpha, useTheme } from '@mui/material/styles'
 
@@ -71,6 +71,17 @@ export function CalendarPicker(props: CalendarPickerProps) {
   const [hoverWeek, setHoverWeek] = useState<string | null>(null)
 
   const grid = useMemo(() => buildGrid(year, month), [year, month])
+
+  const yearRange = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    let startY = currentYear - 100
+    let endY = currentYear + 10
+    if (minDate) startY = Math.max(startY, Number(minDate.slice(0, 4)))
+    if (maxDate) endY = Math.min(endY, Number(maxDate.slice(0, 4)))
+    startY = Math.min(startY, year)
+    endY = Math.max(endY, year)
+    return Array.from({ length: endY - startY + 1 }, (_, i) => startY + i)
+  }, [minDate, maxDate, year])
 
   const goMonth = (delta: number) => {
     setMonth((m) => {
@@ -157,9 +168,42 @@ export function CalendarPicker(props: CalendarPickerProps) {
         <IconButton size="small" onClick={() => goMonth(-1)}>
           <ChevronLeft fontSize="small" />
         </IconButton>
-        <Typography variant="subtitle2" fontWeight={600}>
-          {MONTHS[month]} {year}
-        </Typography>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <Select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              '& .MuiSelect-select': { py: 0.25, pl: 0.5, pr: '20px !important' },
+            }}
+            MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
+          >
+            {MONTHS.map((m, i) => (
+              <MenuItem key={m} value={i}>{m}</MenuItem>
+            ))}
+          </Select>
+          <Select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              '& .MuiSelect-select': { py: 0.25, pl: 0.5, pr: '20px !important' },
+            }}
+            MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
+          >
+            {yearRange.map((y) => (
+              <MenuItem key={y} value={y}>{y}</MenuItem>
+            ))}
+          </Select>
+        </Stack>
         <IconButton size="small" onClick={() => goMonth(1)}>
           <ChevronRight fontSize="small" />
         </IconButton>
