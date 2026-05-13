@@ -295,9 +295,8 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
   const todayDay = DAYS_ORDER[jsDayToIndex(now.getDay())]
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = Math.max(0, currentMin * (HOUR_PX / 60) - 120)
-    }
+    const top = Math.max(0, currentMin * (HOUR_PX / 60) - 120)
+    window.scrollTo({ top: scrollRef.current ? scrollRef.current.getBoundingClientRect().top + window.scrollY + top : top })
   }, [])
 
   type Entry = { cls: Class; colorIdx: number; startMin: number; endMin: number }
@@ -313,10 +312,9 @@ function CalendarView({ classes, onClassClick }: { classes: Class[]; onClassClic
 
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-      {/* Scrollable container — header is sticky inside so columns always align */}
-      <Box ref={scrollRef} sx={{ overflowY: 'auto', maxHeight: 560 }}>
+      <Box ref={scrollRef}>
         {/* Header */}
-        <Box sx={{ display: 'flex', borderBottom: 2, borderColor: 'divider', bgcolor: 'background.paper', position: 'sticky', top: 0, zIndex: 2 }}>
+        <Box sx={{ display: 'flex', borderBottom: 2, borderColor: 'divider', bgcolor: 'background.paper', position: 'sticky', top: 64, zIndex: 2 }}>
           <Box sx={{ width: TIME_W, flexShrink: 0 }} />
           {DAYS_ORDER.map((day) => {
             const isToday = day === todayDay

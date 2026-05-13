@@ -22,7 +22,11 @@ const scheduleEntrySchema = z.object({
   day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
   start_time: z.string().min(1, 'Obrigatório'),
   end_time: z.string().min(1, 'Obrigatório'),
-})
+}).refine(
+  (d: { start_time: string; end_time: string; day: string }) =>
+    !d.start_time || !d.end_time || d.end_time > d.start_time,
+  { message: 'Término deve ser após o início', path: ['end_time'] },
+)
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório'),
@@ -200,7 +204,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 />
               </Grid>
             )}
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 label="Link da chamada (Meet, Zoom…)"
                 fullWidth
@@ -285,8 +289,9 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                     label="Término"
                     type="time"
                     size="small"
-                    slotProps={{ inputLabel: { shrink: true } }}
+                    slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: watchedSchedule[index]?.start_time || '' } }}
                     error={!!errors.schedule?.[index]?.end_time}
+                    helperText={(errors.schedule?.[index]?.end_time as any)?.message}
                     {...register(`schedule.${index}.end_time`)}
                     sx={{ width: 120 }}
                   />

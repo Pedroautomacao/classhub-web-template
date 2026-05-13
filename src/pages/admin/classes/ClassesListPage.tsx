@@ -52,6 +52,7 @@ export function ClassesListPage() {
   const [filterDay, setFilterDay] = useState('')
   const [filterStartTime, setFilterStartTime] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [filterFrequency, setFilterFrequency] = useState('')
   const [isExporting, setIsExporting] = useState(false)
 
   const { data: teachers = [] } = useQuery({
@@ -60,13 +61,14 @@ export function ClassesListPage() {
   })
 
   const { data: classes = [], isLoading } = useQuery({
-    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterStartTime, filterType],
+    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterStartTime, filterType, filterFrequency],
     queryFn: () => classesApi.list({
       teacher_id: filterTeacher?.id || undefined,
       name: filterName || undefined,
       day_of_week: filterDay || undefined,
       start_time: filterStartTime || undefined,
       class_type: filterType || undefined,
+      frequency: filterFrequency || undefined,
     }),
   })
 
@@ -97,6 +99,7 @@ export function ClassesListPage() {
         day_of_week: filterDay || undefined,
         start_time: filterStartTime || undefined,
         class_type: filterType || undefined,
+        frequency: filterFrequency || undefined,
       })
       exportToXlsx(rows, [
         { label: 'Nome', value: (c) => c.name },
@@ -254,6 +257,18 @@ export function ClassesListPage() {
             >
               <MenuItem value="">Todos</MenuItem>
               {CLASS_TYPE_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+            </TextField>
+            <TextField
+              select
+              label="Frequência"
+              size="small"
+              value={filterFrequency}
+              onChange={(e) => setFilterFrequency(e.target.value)}
+              sx={{ minWidth: 130 }}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              <MenuItem value="weekly">Semanal</MenuItem>
+              <MenuItem value="biweekly">Quinzenal</MenuItem>
             </TextField>
           </Stack>
           <DataTable columns={columns} rows={classes} loading={isLoading} emptyMessage="Nenhuma turma cadastrada." onExport={handleExport} isExporting={isExporting} />

@@ -129,6 +129,11 @@ function NewClosingForm() {
       return sameDay && sameClass && overlaps
     })
 
+    if (sessionEnd <= sessionStart) {
+      setSessionError('O horário de término deve ser após o horário de início.')
+      return
+    }
+
     if (conflict) {
       setSessionError('Já existe uma aula dessa turma nesse dia com horário conflitante.')
       return
@@ -293,7 +298,7 @@ function NewClosingForm() {
               <Grid size={{ xs: 6, sm: specialType ? 1 : 2 }}>
                 <TextField
                   label="Término *" type="time" fullWidth size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
+                  slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: sessionStart || '' } }}
                   value={sessionEnd} onChange={(e) => setSessionEnd(e.target.value)}
                   helperText=" "
                 />

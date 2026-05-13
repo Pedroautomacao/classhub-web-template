@@ -10,7 +10,10 @@ import { DAYS } from '@/utils/availability'
 export const availabilitySlotSchema = z.object({
   start: z.string().min(1, 'Obrigatório'),
   end: z.string().min(1, 'Obrigatório'),
-})
+}).refine(
+  (d) => !d.start || !d.end || d.end > d.start,
+  { message: 'Fim deve ser após o início', path: ['end'] },
+)
 
 export const availabilityDaySchema = z.object({
   day: z.string().min(1, 'Selecione um dia'),
@@ -118,7 +121,9 @@ function AvailabilityDayRow({ dayIndex, control, register, watch, errors, usedDa
       </Stack>
 
       <Stack spacing={1}>
-        {slotFields.map((slotField, slotIndex) => (
+        {slotFields.map((slotField, slotIndex) => {
+          const slotStart = watch(`availability.${dayIndex}.slots.${slotIndex}.start`)
+          return (
           <Stack key={slotField.id} direction="row" spacing={1} alignItems="center">
             <TextField
               label="Início"
@@ -134,8 +139,9 @@ function AvailabilityDayRow({ dayIndex, control, register, watch, errors, usedDa
               label="Fim"
               type="time"
               size="small"
-              slotProps={{ inputLabel: { shrink: true } }}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: slotStart || '' } }}
               error={!!errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end}
+              helperText={(errors.availability?.[dayIndex]?.slots?.[slotIndex]?.end as any)?.message}
               {...register(`availability.${dayIndex}.slots.${slotIndex}.end`)}
               sx={{ width: 130 }}
             />
@@ -147,7 +153,8 @@ function AvailabilityDayRow({ dayIndex, control, register, watch, errors, usedDa
               </Tooltip>
             )}
           </Stack>
-        ))}
+          )
+        })}
         <Button
           size="small"
           startIcon={<Add />}

@@ -25,6 +25,7 @@ export interface ClassListParams {
   day_of_week?: string
   start_time?: string
   class_type?: string
+  frequency?: string
 }
 
 export const classesApi = {
