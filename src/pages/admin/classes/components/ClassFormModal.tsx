@@ -30,7 +30,18 @@ const scheduleEntrySchema = z.object({
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório'),
   teacher_id: z.string().optional(),
-  schedule: z.array(scheduleEntrySchema).min(1, 'Adicione pelo menos um horário'),
+  schedule: z.array(scheduleEntrySchema).min(1, 'Adicione pelo menos um horário').superRefine((entries, ctx) => {
+    entries.forEach((a, i) => {
+      entries.forEach((b, j) => {
+        if (i >= j || !a.day || !b.day || a.day !== b.day) return
+        if (!a.start_time || !a.end_time || !b.start_time || !b.end_time) return
+        if (a.start_time < b.end_time && b.start_time < a.end_time) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Conflito de horário', path: [i, 'start_time'] })
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Conflito de horário', path: [j, 'start_time'] })
+        }
+      })
+    })
+  }),
   class_type: z.enum(['grammar', 'conversation', 'private_lesson']),
   frequency: z.enum(['weekly', 'biweekly']),
   biweekly_start_date: z.string().optional(),
@@ -355,6 +366,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                       size="small"
                       slotProps={{ inputLabel: { shrink: true } }}
                       error={!!errors.schedule?.[index]?.start_time}
+                      helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
                       {...register(`schedule.${index}.start_time`)}
                       sx={{ width: 120 }}
                     />
