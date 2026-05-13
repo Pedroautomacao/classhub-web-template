@@ -28,7 +28,7 @@ interface DatePickerFieldProps {
 
 export function DatePickerField({
   value, onChange, label, error, helperText, fullWidth,
-  size = 'small', disabled, minDate, maxDate, placeholder, sx,
+  size = 'medium', disabled, minDate, maxDate, placeholder, sx,
 }: DatePickerFieldProps) {
   const anchorRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)

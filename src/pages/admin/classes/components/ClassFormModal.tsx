@@ -376,6 +376,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                                       onChange={field.onChange}
                                       error={!!errors.schedule?.[index]?.start_time}
                                       helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                                      size="small"
                                       sx={{ width: 130 }}
                                     />
                                   )}
@@ -391,6 +392,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                                       min={watchedSchedule[index]?.start_time || undefined}
                                       error={!!errors.schedule?.[index]?.end_time}
                                       helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                                      size="small"
                                       sx={{ width: 130 }}
                                     />
                                   )}
@@ -452,6 +454,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                           onChange={field.onChange}
                           error={!!errors.schedule?.[index]?.start_time}
                           helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                          size="small"
                           sx={{ width: 130 }}
                         />
                       )}
@@ -467,6 +470,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                           min={watchedSchedule[index]?.start_time || undefined}
                           error={!!errors.schedule?.[index]?.end_time}
                           helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                          size="small"
                           sx={{ width: 130 }}
                         />
                       )}

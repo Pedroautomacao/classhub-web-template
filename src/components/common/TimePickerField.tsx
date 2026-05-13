@@ -22,7 +22,7 @@ interface TimePickerFieldProps {
 
 export function TimePickerField({
   value, onChange, label, error = false, helperText, min,
-  disabled = false, size = 'small', sx,
+  disabled = false, size = 'medium', sx,
 }: TimePickerFieldProps) {
   const theme = useTheme()
   const [focused, setFocused] = useState(false)
@@ -57,8 +57,15 @@ export function TimePickerField({
     ? theme.palette.primary.main
     : theme.palette.mode === 'light' ? 'rgba(0,0,0,0.23)' : 'rgba(255,255,255,0.23)'
 
+  const labelColor = error
+    ? theme.palette.error.main
+    : focused
+    ? theme.palette.primary.main
+    : theme.palette.text.secondary
+
   const selectSx = {
     flex: 1,
+    minWidth: 0,
     '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
     '& .MuiSelect-select': {
       py: size === 'small' ? '8.5px' : '16.5px',
@@ -71,36 +78,39 @@ export function TimePickerField({
 
   return (
     <Box sx={sx}>
-      {label && (
-        <Typography
-          component="label"
-          variant="caption"
-          sx={{
-            display: 'block',
-            mb: 0.25,
-            ml: 0.25,
-            color: error ? 'error.main' : focused ? 'primary.main' : 'text.secondary',
-            lineHeight: 1.5,
-            transition: 'color 0.2s',
-          }}
-        >
-          {label}
-        </Typography>
-      )}
       <Box
+        component="fieldset"
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         sx={{
           display: 'flex',
           alignItems: 'center',
-          border: `${focused ? 2 : 1}px solid ${borderColor}`,
+          borderColor,
+          borderStyle: 'solid',
+          borderWidth: focused ? 2 : 1,
           borderRadius: `${theme.shape.borderRadius}px`,
-          overflow: 'hidden',
-          bgcolor: disabled ? 'action.disabledBackground' : 'background.paper',
+          m: 0,
+          py: 0,
+          px: focused ? 'calc(0.25rem - 1px)' : '0.25rem',
+          bgcolor: disabled ? 'action.disabledBackground' : 'transparent',
           transition: 'border-color 0.15s, border-width 0.05s',
-          '&:hover': !disabled && !focused ? { borderColor: theme.palette.text.primary } : {},
+          minWidth: 0,
+          '& > legend': {
+            float: 'unset',
+            width: 'auto',
+            padding: '0 5px',
+            marginLeft: '5px',
+            fontSize: '0.75rem',
+            lineHeight: 1,
+            color: labelColor,
+            transition: 'color 0.2s',
+          },
+          '&:hover': !disabled && !focused
+            ? { borderColor: theme.palette.text.primary }
+            : {},
         }}
       >
+        {label && <legend>{label}</legend>}
         <Select
           value={hh}
           onChange={handleHour}
