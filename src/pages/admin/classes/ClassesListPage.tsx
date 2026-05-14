@@ -11,7 +11,6 @@ import { DataTable, type Column } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { ClassFormModal } from './components/ClassFormModal'
 import { LiveClassesTab } from './components/LiveClassesTab'
-import { TimePickerField } from '@/components/common/TimePickerField'
 import { classesApi, type ClassPayload } from '@/api/classes.api'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -51,7 +50,6 @@ export function ClassesListPage() {
   const [filterTeacher, setFilterTeacher] = useState<Teacher | null>(null)
   const [filterName, setFilterName] = useState('')
   const [filterDay, setFilterDay] = useState('')
-  const [filterStartTime, setFilterStartTime] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterFrequency, setFilterFrequency] = useState('')
   const [isExporting, setIsExporting] = useState(false)
@@ -62,12 +60,11 @@ export function ClassesListPage() {
   })
 
   const { data: classes = [], isLoading } = useQuery({
-    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterStartTime, filterType, filterFrequency],
+    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterType, filterFrequency],
     queryFn: () => classesApi.list({
       teacher_id: filterTeacher?.id || undefined,
       name: filterName || undefined,
       day_of_week: filterDay || undefined,
-      start_time: filterStartTime || undefined,
       class_type: filterType || undefined,
       frequency: filterFrequency || undefined,
     }),
@@ -98,7 +95,6 @@ export function ClassesListPage() {
         teacher_id: filterTeacher?.id || undefined,
         name: filterName || undefined,
         day_of_week: filterDay || undefined,
-        start_time: filterStartTime || undefined,
         class_type: filterType || undefined,
         frequency: filterFrequency || undefined,
       })
@@ -239,13 +235,6 @@ export function ClassesListPage() {
               <MenuItem value="">Todos</MenuItem>
               {DAYS.map((d) => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
             </TextField>
-            <TimePickerField
-              label="Horário de início"
-              size="small"
-              value={filterStartTime}
-              onChange={setFilterStartTime}
-              sx={{ minWidth: 140 }}
-            />
             <TextField
               select
               label="Tipo"

@@ -55,16 +55,20 @@ interface QuestionFieldProps {
 function QuestionField({ question, value, onChange, error }: QuestionFieldProps) {
   if (question.type === 'text') {
     return (
-      <TextField
-        label={question.text + (question.required ? ' *' : '')}
-        multiline
-        rows={3}
-        fullWidth
-        value={value as string}
-        onChange={(e) => onChange(e.target.value)}
-        error={!!error}
-        helperText={error}
-      />
+      <Box>
+        <Typography variant="body2" fontWeight={500} mb={0.5}>
+          {question.text}{question.required ? ' *' : ''}
+        </Typography>
+        <TextField
+          multiline
+          rows={3}
+          fullWidth
+          value={value as string}
+          onChange={(e) => onChange(e.target.value)}
+          error={!!error}
+          helperText={error}
+        />
+      </Box>
     )
   }
 
