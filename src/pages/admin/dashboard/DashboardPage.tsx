@@ -27,18 +27,12 @@ import { classesApi } from '@/api/classes.api'
 import { PageHeader } from '@/components/common/PageHeader'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
-
-const DAY_MAP: Record<number, string> = {
-  0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
-  4: 'thursday', 5: 'friday', 6: 'saturday',
-}
+import { getLiveClasses } from '@/utils/availability'
 
 function getSPNow() {
   const sp = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
   return { totalMinutes: sp.getHours() * 60 + sp.getMinutes(), dayIndex: sp.getDay() }
 }
-
-function parseTime(t: string) { const [h, m] = t.split(':').map(Number); return h * 60 + m }
 
 interface KpiCardProps {
   label: string
@@ -121,14 +115,7 @@ export function DashboardPage() {
     return () => clearInterval(id)
   }, [])
 
-  const liveCount = classes.filter((c) =>
-    c.schedule.some((s) => {
-      const day = DAY_MAP[spNow.dayIndex]
-      return s.day === day
-        && spNow.totalMinutes >= parseTime(s.start_time)
-        && spNow.totalMinutes < parseTime(s.end_time)
-    })
-  ).length
+  const liveCount = getLiveClasses(classes, spNow).length
 
   const go = (path: string, state?: object) => () => navigate(path, { state })
 

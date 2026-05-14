@@ -7,12 +7,8 @@ import {
 import { AccessTime, Person, School, FiberManualRecord, VideoCall } from '@mui/icons-material'
 import { classesApi } from '@/api/classes.api'
 import { teachersApi } from '@/api/teachers.api'
+import { getLiveClasses } from '@/utils/availability'
 import type { Class } from '@/types'
-
-const DAY_MAP: Record<number, string> = {
-  0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
-  4: 'thursday', 5: 'friday', 6: 'saturday',
-}
 
 const CLASS_TYPE_LABEL: Record<string, string> = {
   grammar: 'Gramática',
@@ -37,18 +33,6 @@ function parseTime(t: string) {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
 }
-
-/** Returns true if a biweekly class is active in the current São Paulo week. */
-function isBiweeklyActive(startDate: string | null | undefined): boolean {
-  if (!startDate) return true
-  const ref = new Date(startDate + 'T00:00:00')
-  const spNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
-  const spToday = new Date(spNow.getFullYear(), spNow.getMonth(), spNow.getDate())
-  const daysDiff = Math.floor((spToday.getTime() - ref.getTime()) / 86_400_000)
-  if (daysDiff < 0) return false
-  return Math.floor(daysDiff / 7) % 2 === 0
-}
-
 
 function ElapsedTimer({ startTime }: { startTime: string }) {
   const [tick, setTick] = useState(0)
@@ -250,16 +234,7 @@ export function LiveClassesTab() {
 
   const teacherMap = Object.fromEntries(teachers.map((t) => [t.id, t.name]))
 
-  const day = DAY_MAP[now.dayIndex]
-  const liveClasses = classes
-    .filter((c) => c.frequency === 'weekly' || isBiweeklyActive(c.biweekly_start_date))
-    .map((c) => {
-      const entry = c.schedule.find(
-        (s) => s.day === day && now.totalMinutes >= parseTime(s.start_time) && now.totalMinutes < parseTime(s.end_time)
-      )
-      return entry ? { cls: c, entry } : null
-    })
-    .filter(Boolean) as { cls: Class; entry: { start_time: string; end_time: string } }[]
+  const liveClasses = getLiveClasses(classes, now)
 
   if (loadingClasses) {
     return (
@@ -269,7 +244,7 @@ export function LiveClassesTab() {
     )
   }
 
-  if (liveClasses.length === 0 || !day) {
+  if (liveClasses.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <School sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
