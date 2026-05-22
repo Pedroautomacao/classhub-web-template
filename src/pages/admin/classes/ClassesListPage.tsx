@@ -7,7 +7,7 @@ import {
 } from '@mui/material'
 import { Edit, Delete, People, FiberManualRecord } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { ClassFormModal } from './components/ClassFormModal'
 import { LiveClassesTab } from './components/LiveClassesTab'
@@ -52,6 +52,8 @@ export function ClassesListPage() {
   const [filterDay, setFilterDay] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterFrequency, setFilterFrequency] = useState('')
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
 
   const { data: teachers = [] } = useQuery({
@@ -60,13 +62,15 @@ export function ClassesListPage() {
   })
 
   const { data: classes = [], isLoading } = useQuery({
-    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterType, filterFrequency],
+    queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterType, filterFrequency, sortBy, sortOrder],
     queryFn: () => classesApi.list({
       teacher_id: filterTeacher?.id || undefined,
       name: filterName || undefined,
       day_of_week: filterDay || undefined,
       class_type: filterType || undefined,
       frequency: filterFrequency || undefined,
+      sort_by: sortBy,
+      sort_order: sortOrder,
     }),
   })
 
@@ -259,7 +263,18 @@ export function ClassesListPage() {
               <MenuItem value="biweekly">Quinzenal</MenuItem>
             </TextField>
           </Stack>
-          <DataTable columns={columns} rows={classes} loading={isLoading} emptyMessage="Nenhuma turma cadastrada." onExport={handleExport} isExporting={isExporting} />
+          <DataTable
+            columns={columns}
+            rows={classes}
+            loading={isLoading}
+            emptyMessage="Nenhuma turma cadastrada."
+            onExport={handleExport}
+            isExporting={isExporting}
+            sortableColumns={['name', 'class_type', 'frequency', 'created_at']}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
+          />
         </>
       )}
       <ClassFormModal

@@ -30,6 +30,8 @@ export const Permission = {
   HOUR_CLOSINGS_READ: 'hour_closings:read',
   HOUR_CLOSINGS_WRITE: 'hour_closings:write',
   HOUR_CLOSINGS_APPROVE: 'hour_closings:approve',
+  PAYMENTS_READ: 'payments:read',
+  PAYMENTS_WRITE: 'payments:write',
 } as const
 
 export type PermissionKey = typeof Permission[keyof typeof Permission]

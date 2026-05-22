@@ -2,7 +2,14 @@ import api from './axios'
 import type { Contract, ContractStatus } from '@/types'
 
 export const contractsApi = {
-  list: (params?: { student_id?: string; contract_status?: ContractStatus; search?: string; expiring_soon?: boolean }) =>
+  list: (params?: {
+    student_id?: string
+    contract_status?: ContractStatus
+    search?: string
+    expiring_soon?: boolean
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  }) =>
     api.get<Contract[]>('/contracts/', { params }).then((r) => r.data),
 
   get: (id: string) =>

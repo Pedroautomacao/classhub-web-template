@@ -5,6 +5,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Paper,
   Skeleton,
   Typography,
@@ -14,6 +15,8 @@ import {
 } from '@mui/material'
 import { FileDownload } from '@mui/icons-material'
 import type { ReactNode } from 'react'
+
+export type SortOrder = 'asc' | 'desc'
 
 export interface Column<T> {
   key: string
@@ -31,6 +34,10 @@ interface DataTableProps<T extends { id: string }> {
   skeletonRows?: number
   onExport?: () => void
   isExporting?: boolean
+  sortableColumns?: string[]
+  sortBy?: string
+  sortOrder?: SortOrder
+  onSortChange?: (sortBy: string, sortOrder: SortOrder) => void
 }
 
 export function DataTable<T extends { id: string }>({
@@ -41,7 +48,19 @@ export function DataTable<T extends { id: string }>({
   skeletonRows = 5,
   onExport,
   isExporting = false,
+  sortableColumns,
+  sortBy,
+  sortOrder,
+  onSortChange,
 }: DataTableProps<T>) {
+  const isSortable = (key: string) => !!sortableColumns?.includes(key) && !!onSortChange
+
+  const handleSort = (key: string) => {
+    if (!onSortChange) return
+    const nextOrder: SortOrder = sortBy === key && sortOrder === 'asc' ? 'desc' : 'asc'
+    onSortChange(key, nextOrder)
+  }
+
   return (
     <Box>
       {onExport && (
@@ -61,15 +80,30 @@ export function DataTable<T extends { id: string }>({
       <Table size="small">
         <TableHead>
           <TableRow sx={{ bgcolor: 'action.hover' }}>
-            {columns.map((col) => (
-              <TableCell
-                key={col.key}
-                align={col.align ?? 'left'}
-                sx={{ fontWeight: 700, width: col.width }}
-              >
-                {col.label}
-              </TableCell>
-            ))}
+            {columns.map((col) => {
+              const sortable = isSortable(col.key)
+              const active = sortable && sortBy === col.key
+              return (
+                <TableCell
+                  key={col.key}
+                  align={col.align ?? 'left'}
+                  sortDirection={active ? sortOrder : false}
+                  sx={{ fontWeight: 700, width: col.width }}
+                >
+                  {sortable ? (
+                    <TableSortLabel
+                      active={active}
+                      direction={active ? sortOrder : 'asc'}
+                      onClick={() => handleSort(col.key)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  ) : (
+                    col.label
+                  )}
+                </TableCell>
+              )
+            })}
           </TableRow>
         </TableHead>
         <TableBody>

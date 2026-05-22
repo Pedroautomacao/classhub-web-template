@@ -10,7 +10,7 @@ import {
 import { Visibility, Edit } from '@mui/icons-material'
 import dayjs from 'dayjs'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { levelingApi } from '@/api/leveling.api'
 import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -53,6 +53,8 @@ export function LevelingListPage() {
   const [statusFilter, setStatusFilter] = useState<ContactStatus | undefined>(initialContactStatus)
   const [nameFilter, setNameFilter] = useState('')
   const [phoneFilter, setPhoneFilter] = useState('')
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
   const [viewForm, setViewForm] = useState<LevelingFormResponse | null>(null)
   const [editStatus, setEditStatus] = useState<LevelingFormResponse | null>(null)
@@ -67,11 +69,13 @@ export function LevelingListPage() {
   const levelOptions = settingsData?.level_options ?? []
 
   const { data: forms = [], isLoading } = useQuery({
-    queryKey: ['leveling', statusFilter, nameFilter, phoneFilter],
+    queryKey: ['leveling', statusFilter, nameFilter, phoneFilter, sortBy, sortOrder],
     queryFn: () => levelingApi.list({
       contact_status: statusFilter,
       name: nameFilter || undefined,
       phone: phoneFilter || undefined,
+      sort_by: sortBy,
+      sort_order: sortOrder,
     }),
   })
 
@@ -199,7 +203,18 @@ export function LevelingListPage() {
         />
       </Stack>
 
-      <DataTable columns={columns} rows={forms} loading={isLoading} emptyMessage="Nenhum formulário encontrado." onExport={handleExport} isExporting={isExporting} />
+      <DataTable
+        columns={columns}
+        rows={forms}
+        loading={isLoading}
+        emptyMessage="Nenhum formulário encontrado."
+        onExport={handleExport}
+        isExporting={isExporting}
+        sortableColumns={['full_name', 'email', 'phone', 'created_at', 'contact_status']}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
+      />
 
       {/* Dialog de visualização */}
       <Dialog open={!!viewForm} onClose={() => setViewForm(null)} maxWidth="sm" fullWidth>

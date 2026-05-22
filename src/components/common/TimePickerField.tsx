@@ -85,6 +85,8 @@ export function TimePickerField({
         sx={{
           display: 'flex',
           alignItems: 'center',
+          height: size === 'small' ? 40 : 56,
+          boxSizing: 'border-box',
           borderColor,
           borderStyle: 'solid',
           borderWidth: focused ? 2 : 1,

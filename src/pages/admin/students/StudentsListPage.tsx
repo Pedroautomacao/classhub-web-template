@@ -21,12 +21,14 @@ import {
   Chip,
   Alert,
 } from '@mui/material'
-import { Edit, PersonOff, PersonAdd, Search, ClassOutlined, Warning, Error } from '@mui/icons-material'
+import { Edit, PersonOff, PersonAdd, Search, ClassOutlined, Warning, Error, Visibility } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { DateRangePickerField, type DateRangeValue } from '@/components/common/DateRangePickerField'
 import { StudentStatusChip } from './components/StudentStatusChip'
 import { StudentFormModal } from './components/StudentFormModal'
+import { StudentDetailsModal } from './components/StudentDetailsModal'
 import { studentsApi, type StudentUpdate } from '@/api/students.api'
 import { classesApi } from '@/api/classes.api'
 import { studentMatchesClass } from '@/utils/availability'
@@ -35,13 +37,6 @@ import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
 import type { Student, StudentStatus, Class } from '@/types'
-
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return phone
-}
 
 // ── Add to Class modal ────────────────────────────────────────────────────────
 
@@ -144,17 +139,29 @@ export function StudentsListPage() {
   const initialStatus = (location.state as any)?.status as StatusFilter
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus ?? undefined)
   const [search, setSearch] = useState('')
+  const [dateRange, setDateRange] = useState<DateRangeValue | null>(null)
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
   const [editTarget, setEditTarget] = useState<Student | null>(null)
+  const [detailsTarget, setDetailsTarget] = useState<Student | null>(null)
   const [deactivateTarget, setDeactivateTarget] = useState<Student | null>(null)
   const [reactivateTarget, setReactivateTarget] = useState<Student | null>(null)
   const [addToClassTarget, setAddToClassTarget] = useState<Student | null>(null)
 
   const apiStatusFilter = (statusFilter === 'without_class' || statusFilter === 'with_class') ? undefined : statusFilter
+  const createdAfter = dateRange?.[0] ?? undefined
+  const createdBefore = dateRange?.[1] ?? dateRange?.[0] ?? undefined
 
   const { data: students = [], isLoading } = useQuery({
-    queryKey: ['students', apiStatusFilter],
-    queryFn: () => studentsApi.list(apiStatusFilter),
+    queryKey: ['students', apiStatusFilter, createdAfter, createdBefore, sortBy, sortOrder],
+    queryFn: () => studentsApi.list({
+      status: apiStatusFilter,
+      created_after: createdAfter,
+      created_before: createdBefore,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    }),
   })
 
   const { data: classes = [] } = useQuery({
@@ -227,7 +234,13 @@ export function StudentsListPage() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      const rows = await studentsApi.list(apiStatusFilter)
+      const rows = await studentsApi.list({
+        status: apiStatusFilter,
+        created_after: createdAfter,
+        created_before: createdBefore,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      })
       exportToXlsx(rows, [
         { label: 'Nome', value: (s) => s.full_name },
         { label: 'E-mail', value: (s) => s.email ?? '' },
@@ -242,10 +255,8 @@ export function StudentsListPage() {
 
   const columns: Column<Student>[] = [
     { key: 'full_name', label: 'Nome' },
-    { key: 'email', label: 'E-mail', render: (s) => s.email ?? '—' },
-    { key: 'phone', label: 'Telefone', render: (s) => s.phone ? maskPhone(s.phone) : '—' },
     {
-      key: 'status' as any,
+      key: 'classes_chip',
       label: 'Turma',
       render: (s) => {
         if (!s.classes?.length) return <Chip label="Sem turma" size="small" variant="outlined" color="warning" />
@@ -264,10 +275,15 @@ export function StudentsListPage() {
     },
     { key: 'level', label: 'Nível', render: (s) => s.level ?? '—' },
     {
+      key: 'created_at',
+      label: 'Cadastro',
+      render: (s) => s.created_at ? new Date(s.created_at).toLocaleDateString('pt-BR') : '—',
+    },
+    {
       key: 'actions',
       label: '',
       align: 'right',
-      width: 120,
+      width: 160,
       render: (s) => (
         <Stack direction="row" justifyContent="flex-end">
           {canWriteClasses && s.status === 'active' && !s.classes?.length && (
@@ -277,6 +293,11 @@ export function StudentsListPage() {
               </IconButton>
             </Tooltip>
           )}
+          <Tooltip title="Ver detalhes">
+            <IconButton size="small" onClick={() => setDetailsTarget(s)}>
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
           {canWrite && (
             <Tooltip title="Editar">
               <IconButton size="small" onClick={() => setEditTarget(s)}>
@@ -313,13 +334,18 @@ export function StudentsListPage() {
           actions: [
             'Cadastrar novos alunos manualmente',
             'Editar dados de alunos existentes (nome, e-mail, telefone, CPF, disponibilidade)',
+            'Visualizar todos os dados cadastrados do aluno no modal de detalhes (ícone de olho)',
             'Filtrar por status: ativos, inativos, com turma ou sem turma',
+            'Filtrar por data de cadastro (data específica ou intervalo, no mesmo calendário)',
+            'Ordenar a tabela por qualquer coluna clicando no cabeçalho',
             'Adicionar um aluno diretamente a uma turma existente',
             'Inativar ou reativar alunos',
             'Buscar alunos por nome, e-mail ou CPF',
           ],
           tips: [
             'Use o filtro "Sem Turma" para encontrar alunos ativos que ainda precisam ser alocados.',
+            'O modal de detalhes mostra também histórico de contratos e disponibilidade formatada por dia.',
+            'Telefone e e-mail não aparecem mais na tabela para liberar espaço — abra o modal de detalhes para vê-los.',
             'A disponibilidade e o nível do aluno são usados para alertar conflitos ao adicioná-lo a uma turma.',
             'O nível é preenchido automaticamente com base no último nivelamento concluído do aluno.',
             'Alunos normalmente chegam via formulário de Matrícula — o cadastro manual é usado para casos especiais.',
@@ -345,6 +371,13 @@ export function StudentsListPage() {
           }}
           sx={{ minWidth: 280 }}
         />
+        <DateRangePickerField
+          size="small"
+          label="Data de cadastro"
+          value={dateRange}
+          onChange={setDateRange}
+          sx={{ minWidth: 280 }}
+        />
         <ToggleButtonGroup
           size="small"
           exclusive
@@ -366,6 +399,10 @@ export function StudentsListPage() {
         emptyMessage="Nenhum aluno encontrado."
         onExport={handleExport}
         isExporting={isExporting}
+        sortableColumns={['full_name', 'level', 'status', 'created_at']}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
       />
 
       <StudentFormModal
@@ -376,6 +413,11 @@ export function StudentsListPage() {
         onSubmit={(values) =>
           editTarget && updateMutation.mutate({ id: editTarget.id, data: values })
         }
+      />
+
+      <StudentDetailsModal
+        student={detailsTarget}
+        onClose={() => setDetailsTarget(null)}
       />
 
       <AddToClassModal

@@ -14,6 +14,7 @@ const StudentsListPage = lazy(() => import('@/pages/admin/students/StudentsListP
 const TeachersListPage = lazy(() => import('@/pages/admin/teachers/TeachersListPage').then((m) => ({ default: m.TeachersListPage })))
 const ClassesListPage = lazy(() => import('@/pages/admin/classes/ClassesListPage').then((m) => ({ default: m.ClassesListPage })))
 const ContractsListPage = lazy(() => import('@/pages/admin/contracts/ContractsListPage').then((m) => ({ default: m.ContractsListPage })))
+const PaymentsListPage = lazy(() => import('@/pages/admin/payments/PaymentsListPage').then((m) => ({ default: m.PaymentsListPage })))
 const PlansListPage = lazy(() => import('@/pages/admin/plans/PlansListPage').then((m) => ({ default: m.PlansListPage })))
 const LevelingListPage = lazy(() => import('@/pages/admin/leveling/LevelingListPage').then((m) => ({ default: m.LevelingListPage })))
 const EnrollmentPage = lazy(() => import('@/pages/admin/enrollment/EnrollmentPage').then((m) => ({ default: m.EnrollmentPage })))
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
           { path: '/admin/teachers', element: <Lazy><TeachersListPage /></Lazy> },
           { path: '/admin/classes', element: <Lazy><ClassesListPage /></Lazy> },
           { path: '/admin/contracts', element: <Lazy><ContractsListPage /></Lazy> },
+          { path: '/admin/payments', element: <Lazy><PaymentsListPage /></Lazy> },
           { path: '/admin/plans', element: <Lazy><PlansListPage /></Lazy> },
           { path: '/admin/leveling', element: <Lazy><LevelingListPage /></Lazy> },
           { path: '/admin/enrollment', element: <Lazy><EnrollmentPage /></Lazy> },

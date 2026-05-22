@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Box, IconButton, Switch, Tooltip, Stack } from '@mui/material'
 import { Edit, Delete } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { PlanFormModal } from './components/PlanFormModal'
 import { plansApi } from '@/api/plans.api'
@@ -25,11 +25,13 @@ export function PlansListPage() {
   const [selected, setSelected] = useState<Plan | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Plan | null>(null)
   const [toggleTarget, setToggleTarget] = useState<Plan | null>(null)
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
 
   const { data: plans = [], isLoading } = useQuery({
-    queryKey: ['plans'],
-    queryFn: () => plansApi.list(),
+    queryKey: ['plans', sortBy, sortOrder],
+    queryFn: () => plansApi.list({ sort_by: sortBy, sort_order: sortOrder }),
   })
 
   const createMutation = useMutation({
@@ -194,6 +196,10 @@ export function PlansListPage() {
         emptyMessage="Nenhum plano cadastrado."
         onExport={handleExport}
         isExporting={isExporting}
+        sortableColumns={['name', 'duration_months', 'price', 'is_active', 'created_at']}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
       />
 
       <PlanFormModal

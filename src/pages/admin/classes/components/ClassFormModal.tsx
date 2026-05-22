@@ -397,7 +397,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                                     />
                                   )}
                                 />
-                                <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 3 }}>
+                                <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ alignSelf: 'center' }}>
                                   <Delete fontSize="small" />
                                 </IconButton>
                               </Stack>
@@ -417,33 +417,29 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 </Stack>
               )
             ) : (
-              /* Weekly: day dropdown (with label above for alignment) + time pickers */
+              /* Weekly: day dropdown + time pickers, all with floating labels */
               <Stack spacing={1.5}>
                 {fields.map((field, index) => (
                   <Stack key={field.id} direction="row" spacing={1} alignItems="flex-start">
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                        Dia
-                      </Typography>
-                      <Controller
-                        name={`schedule.${index}.day`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <TextField
-                            select
-                            size="small"
-                            value={f.value}
-                            onChange={f.onChange}
-                            error={!!errors.schedule?.[index]?.day}
-                            sx={{ minWidth: 150 }}
-                          >
-                            {DAYS.map((d) => (
-                              <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>
-                            ))}
-                          </TextField>
-                        )}
-                      />
-                    </Box>
+                    <Controller
+                      name={`schedule.${index}.day`}
+                      control={control}
+                      render={({ field: f }) => (
+                        <TextField
+                          select
+                          label="Dia"
+                          size="small"
+                          value={f.value}
+                          onChange={f.onChange}
+                          error={!!errors.schedule?.[index]?.day}
+                          sx={{ minWidth: 150 }}
+                        >
+                          {DAYS.map((d) => (
+                            <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>
+                          ))}
+                        </TextField>
+                      )}
+                    />
                     <Controller
                       name={`schedule.${index}.start_time`}
                       control={control}
@@ -476,7 +472,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                       )}
                     />
                     {fields.length > 1 && (
-                      <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ mt: 3 }}>
+                      <IconButton size="small" color="error" onClick={() => remove(index)} sx={{ alignSelf: 'center' }}>
                         <Delete fontSize="small" />
                       </IconButton>
                     )}

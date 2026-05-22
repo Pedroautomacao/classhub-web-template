@@ -14,11 +14,20 @@ export interface StudentUpdate {
   availability?: AvailabilityDay[] | null
   level?: string | null
   contract_accepted?: boolean
+  coupon?: string | null
+}
+
+export interface StudentListParams {
+  status?: StudentStatus
+  created_after?: string
+  created_before?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
 }
 
 export const studentsApi = {
-  list: (status?: StudentStatus) =>
-    api.get<Student[]>('/students/', { params: status ? { status } : {} }).then((r) => r.data),
+  list: (params?: StudentListParams) =>
+    api.get<Student[]>('/students/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<Student>(`/students/${id}`).then((r) => r.data),

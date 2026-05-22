@@ -28,6 +28,7 @@ const schema = z.object({
   cpf: z.string().optional(),
   birth_date: z.string().optional(),
   availability: z.array(availabilityDaySchema).optional(),
+  coupon: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
   payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
   payment_day: z.number({ message: 'Informe o dia' }).int().min(1).max(31),
@@ -88,6 +89,7 @@ export function EnrollmentPage() {
       cpf: values.cpf || undefined,
       birth_date: values.birth_date || undefined,
       availability: values.availability?.length ? values.availability : undefined,
+      coupon: values.coupon || undefined,
       grace_period_days: values.grace_period_days ?? 0,
       contract_file,
       contract_file_name,
@@ -104,6 +106,7 @@ export function EnrollmentPage() {
           actions: [
             'Preencher dados pessoais do novo aluno (nome, contato, CPF, disponibilidade)',
             'Selecionar o plano contratado e definir as datas do contrato',
+            'Informar um cupom (opcional) — registrado junto ao aluno',
             'Fazer upload do contrato em PDF assinado',
             'Criar automaticamente o aluno e o contrato ao finalizar',
           ],
@@ -197,6 +200,9 @@ export function EnrollmentPage() {
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField label="Carência (dias)" type="number" fullWidth {...register('grace_period_days', { valueAsNumber: true })} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 8 }}>
+              <TextField label="Cupom (opcional)" fullWidth {...register('coupon')} />
             </Grid>
           </Grid>
 

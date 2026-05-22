@@ -10,6 +10,7 @@ export interface EnrollmentRequest {
   instagram?: string
   birth_date?: string
   availability?: AvailabilityDay[] | null
+  coupon?: string
   plan_id: string
   payment_method: string
   payment_day: number
@@ -38,6 +39,7 @@ export interface PublicEnrollmentRequest {
   instagram?: string
   birth_date?: string
   availability?: AvailabilityDay[] | null
+  coupon?: string
   plan_id: string
   payment_method: string
   start_date: string

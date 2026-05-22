@@ -26,6 +26,8 @@ export interface ClassListParams {
   start_time?: string
   class_type?: string
   frequency?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
 }
 
 export const classesApi = {

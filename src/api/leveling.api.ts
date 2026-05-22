@@ -11,6 +11,8 @@ interface LevelingListParams {
   contact_status?: ContactStatus
   name?: string
   phone?: string
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
 }
 
 export const levelingApi = {

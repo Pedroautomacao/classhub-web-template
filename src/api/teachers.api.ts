@@ -10,9 +10,17 @@ export interface TeacherPayload {
   availability?: AvailabilityDay[] | null
 }
 
+export interface TeacherListParams {
+  only_training?: boolean
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
 export const teachersApi = {
-  list: (only_training = false) =>
-    api.get<Teacher[]>('/teachers/', { params: { only_training } }).then((r) => r.data),
+  list: (params?: TeacherListParams | boolean) => {
+    const p: TeacherListParams = typeof params === 'boolean' ? { only_training: params } : (params ?? {})
+    return api.get<Teacher[]>('/teachers/', { params: p }).then((r) => r.data)
+  },
 
   get: (id: string) =>
     api.get<Teacher>(`/teachers/${id}`).then((r) => r.data),

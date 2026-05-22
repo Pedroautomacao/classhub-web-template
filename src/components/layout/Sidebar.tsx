@@ -23,6 +23,7 @@ import {
   Link as LinkIcon,
   AccountCircle,
   LibraryBooks,
+  Payments,
 } from '@mui/icons-material'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { label: 'Nova Matrícula', icon: <HowToReg />, path: '/admin/enrollment', permission: Permission.ENROLLMENT_WRITE },
   { label: 'Rematrícula', icon: <HowToReg />, path: '/admin/re-enrollment', permission: Permission.ENROLLMENT_WRITE },
   { label: 'Contratos', icon: <Description />, path: '/admin/contracts', permission: Permission.CONTRACTS_READ },
+  { label: 'Pagamentos', icon: <Payments />, path: '/admin/payments', permission: Permission.PAYMENTS_READ },
   { label: 'Turmas', icon: <Class />, path: '/admin/classes', permission: Permission.CLASSES_READ },
   { label: 'Professores', icon: <School />, path: '/admin/teachers', permission: Permission.TEACHERS_READ },
   { label: 'Planos', icon: <CardMembership />, path: '/admin/plans', permission: Permission.PLANS_READ },

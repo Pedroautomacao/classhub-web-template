@@ -38,6 +38,7 @@ const schema = z.object({
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
   cpf: z.string().optional(),
+  coupon: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
   payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
   start_date: z.string().min(1, 'Informe a data de cobrança'),
@@ -83,6 +84,7 @@ export function EnrollmentFormPage() {
         instagram: values.instagram || undefined,
         birth_date: values.birth_date || undefined,
         cpf: values.cpf || undefined,
+        coupon: values.coupon || undefined,
         plan_id: values.plan_id,
         payment_method: values.payment_method,
         start_date: values.start_date,
@@ -250,6 +252,13 @@ export function EnrollmentFormPage() {
                       helperText={errors.start_date?.message}
                     />
                   )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="Cupom (opcional)"
+                  fullWidth
+                  {...register('coupon')}
                 />
               </Grid>
             </Grid>

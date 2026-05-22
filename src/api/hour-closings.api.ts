@@ -15,7 +15,13 @@ export const hourClosingsApi = {
   create: (data: HourClosingCreatePayload) =>
     api.post<HourClosing>('/hour-closings/', data).then((r) => r.data),
 
-  listMy: (params?: { date_from?: string; date_to?: string; status_filter?: HourClosingStatus }) =>
+  listMy: (params?: {
+    date_from?: string
+    date_to?: string
+    status_filter?: HourClosingStatus
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  }) =>
     api.get<HourClosing[]>('/hour-closings/', { params }).then((r) => r.data),
 
   listAdmin: (params?: {
@@ -23,6 +29,8 @@ export const hourClosingsApi = {
     date_from?: string
     date_to?: string
     status_filter?: HourClosingStatus
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
   }) => api.get<HourClosing[]>('/hour-closings/admin', { params }).then((r) => r.data),
 
   update: (id: string, data: HourClosingUpdatePayload) =>

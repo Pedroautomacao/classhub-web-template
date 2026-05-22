@@ -11,7 +11,7 @@ import { Search } from '@mui/icons-material'
 import { Cancel, InsertDriveFile, UploadFile, Delete, Download } from '@mui/icons-material'
 import dayjs from 'dayjs'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { contractsApi } from '@/api/contracts.api'
 import { filesApi, fileToBase64, downloadBase64File } from '@/api/files.api'
@@ -57,16 +57,20 @@ export function ContractsListPage() {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400)
     return () => clearTimeout(timer)
   }, [searchInput])
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
   const [cancelTarget, setCancelTarget] = useState<Contract | null>(null)
   const [fileContract, setFileContract] = useState<Contract | null>(null)
   const [deleteFileTarget, setDeleteFileTarget] = useState<FileMetadata | null>(null)
 
   const { data: contracts = [], isLoading, isFetching } = useQuery({
-    queryKey: ['contracts', statusFilter, expiringSoonFilter, search],
+    queryKey: ['contracts', statusFilter, expiringSoonFilter, search, sortBy, sortOrder],
     queryFn: () => contractsApi.list({
       ...(expiringSoonFilter ? { expiring_soon: true } : statusFilter ? { contract_status: statusFilter } : {}),
       ...(search ? { search } : {}),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     }),
   })
 
@@ -274,7 +278,18 @@ export function ContractsListPage() {
         />
       </Stack>
 
-      <DataTable columns={columns} rows={contracts} loading={isLoading} emptyMessage="Nenhum contrato encontrado." onExport={handleExport} isExporting={isExporting} />
+      <DataTable
+        columns={columns}
+        rows={contracts}
+        loading={isLoading}
+        emptyMessage="Nenhum contrato encontrado."
+        onExport={handleExport}
+        isExporting={isExporting}
+        sortableColumns={['start_date', 'end_date', 'status', 'created_at']}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
+      />
 
       {/* Cancelar contrato */}
       <ConfirmDialog

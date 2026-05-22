@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Avatar, Box, Chip, IconButton, Stack, Tab, Tabs, Tooltip, ToggleButtonGroup, ToggleButton, Typography } from '@mui/material'
-import { Edit, Delete } from '@mui/icons-material'
+import { Avatar, Box, Chip, Dialog, DialogContent, IconButton, Stack, Tab, Tabs, Tooltip, ToggleButtonGroup, ToggleButton, Typography } from '@mui/material'
+import { Edit, Delete, WhatsApp } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
-import { DataTable, type Column } from '@/components/common/DataTable'
+import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { TeacherFormModal } from './components/TeacherFormModal'
 import { HourClosingsAdminTab } from './components/HourClosingsAdminTab'
@@ -15,6 +15,18 @@ import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { exportToXlsx } from '@/utils/export'
 import type { Teacher } from '@/types'
+
+function maskPhone(phone: string) {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  return phone
+}
+
+function openWhatsApp(phone: string) {
+  const digits = phone.replace(/\D/g, '')
+  window.open(`https://wa.me/${digits}`, '_blank')
+}
 
 export function TeachersListPage() {
   const qc = useQueryClient()
@@ -30,14 +42,17 @@ export function TeachersListPage() {
   const initialTraining = (location.state as any)?.training as 'all' | 'active' | 'training' | undefined
   const [tab, setTab] = useState(initialTab ?? 0)
   const [trainingFilter, setTrainingFilter] = useState<'all' | 'active' | 'training'>(initialTraining ?? 'all')
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [selected, setSelected] = useState<Teacher | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null)
+  const [previewAvatar, setPreviewAvatar] = useState<Teacher | null>(null)
 
   const { data: teachers = [], isLoading } = useQuery({
-    queryKey: ['teachers'],
-    queryFn: () => teachersApi.list(),
+    queryKey: ['teachers', sortBy, sortOrder],
+    queryFn: () => teachersApi.list({ sort_by: sortBy, sort_order: sortOrder }),
   })
 
   const filteredTeachers = trainingFilter === 'active'
@@ -86,18 +101,39 @@ export function TeachersListPage() {
       label: 'Nome',
       render: (t) => (
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Avatar
-            src={t.avatar_url ?? undefined}
-            sx={{ width: 32, height: 32, fontSize: 13, bgcolor: 'primary.main' }}
-          >
-            {t.name[0].toUpperCase()}
-          </Avatar>
+          <Tooltip title={t.avatar_url ? 'Ampliar foto' : ''}>
+            <Avatar
+              src={t.avatar_url ?? undefined}
+              sx={{
+                width: 32,
+                height: 32,
+                fontSize: 13,
+                bgcolor: 'primary.main',
+                cursor: t.avatar_url ? 'pointer' : 'default',
+              }}
+              onClick={() => { if (t.avatar_url) setPreviewAvatar(t) }}
+            >
+              {t.name[0].toUpperCase()}
+            </Avatar>
+          </Tooltip>
           <Typography variant="body2">{t.name}</Typography>
         </Stack>
       ),
     },
     { key: 'email', label: 'E-mail' },
-    { key: 'phone', label: 'Telefone', render: (t) => t.phone ?? '—' },
+    {
+      key: 'phone', label: 'Telefone',
+      render: (t) => t.phone ? (
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Tooltip title="Abrir WhatsApp">
+            <IconButton size="small" color="success" onClick={() => openWhatsApp(t.phone!)}>
+              <WhatsApp fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Typography variant="body2">{maskPhone(t.phone)}</Typography>
+        </Stack>
+      ) : '—',
+    },
     ...(canViewRate ? [{
       key: 'hourly_rate' as const, label: 'Valor/hora', align: 'right' as const,
       render: (t: Teacher) => `R$ ${Number(t.hourly_rate).toFixed(2).replace('.', ',')}`,
@@ -148,8 +184,11 @@ export function TeachersListPage() {
           actions: [
             'Cadastrar e editar professores (nome, e-mail, telefone, taxa horária)',
             'Configurar a disponibilidade semanal de cada professor',
+            'Clicar na foto do professor para visualizá-la em tamanho ampliado',
+            'Iniciar uma conversa pelo WhatsApp clicando no ícone ao lado do telefone',
             'Visualizar e aprovar ou reprovar fechamentos de horas na aba "Fechamento de Horas"',
             'Verificar quais professores estão em treinamento',
+            'Ordenar a tabela por qualquer coluna clicando no cabeçalho',
           ],
           tips: [
             'A disponibilidade do professor é cruzada com a do aluno ao criar turmas — alertas aparecem em caso de conflito.',
@@ -178,7 +217,18 @@ export function TeachersListPage() {
             <ToggleButton value="active">Ativos</ToggleButton>
             <ToggleButton value="training">Em Treinamento</ToggleButton>
           </ToggleButtonGroup>
-          <DataTable columns={columns} rows={filteredTeachers} loading={isLoading} emptyMessage="Nenhum professor cadastrado." onExport={handleExport} isExporting={isExporting} />
+          <DataTable
+            columns={columns}
+            rows={filteredTeachers}
+            loading={isLoading}
+            emptyMessage="Nenhum professor cadastrado."
+            onExport={handleExport}
+            isExporting={isExporting}
+            sortableColumns={['name', 'email', 'phone', 'hourly_rate', 'is_training', 'created_at']}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
+          />
         </>
       )}
       {tab === 1 && canApprove && <HourClosingsAdminTab />}
@@ -195,6 +245,26 @@ export function TeachersListPage() {
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
       />
+      <Dialog
+        open={!!previewAvatar}
+        onClose={() => setPreviewAvatar(null)}
+        maxWidth="sm"
+      >
+        <DialogContent sx={{ p: 0, bgcolor: 'background.default' }}>
+          <Box
+            component="img"
+            src={previewAvatar?.avatar_url ?? ''}
+            alt={previewAvatar?.name ?? ''}
+            onClick={() => setPreviewAvatar(null)}
+            sx={{
+              display: 'block',
+              maxWidth: '100%',
+              maxHeight: '80vh',
+              cursor: 'pointer',
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   )
 }
