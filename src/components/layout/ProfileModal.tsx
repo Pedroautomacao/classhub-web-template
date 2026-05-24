@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
@@ -9,10 +9,12 @@ import {
   TextField, Tooltip, Typography,
 } from '@mui/material'
 import { CameraAlt, Visibility, VisibilityOff } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { useAuthStore } from '@/store/auth.store'
 import { usersApi } from '@/api/users.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 
 const profileSchema = z.object({
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
@@ -57,7 +59,7 @@ export function ProfileModal({ open, onClose }: Props) {
 
   const profileForm = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
-    values: { email: user?.email ?? '', phone: user?.phone ?? '' },
+    values: { email: user?.email ?? '', phone: digitsToE164(user?.phone) },
   })
 
   const passwordForm = useForm<PasswordForm>({
@@ -67,7 +69,7 @@ export function ProfileModal({ open, onClose }: Props) {
 
   const profileMutation = useMutation({
     mutationFn: (data: ProfileForm) =>
-      usersApi.updateMe({ email: data.email || null, phone: data.phone || null }),
+      usersApi.updateMe({ email: data.email || null, phone: e164ToDigits(data.phone) || null }),
     onSuccess: (updated) => { setUser(updated); show('Perfil atualizado!') },
     onError: (err) => show(getApiError(err, 'Erro ao atualizar perfil.'), 'error'),
   })
@@ -169,11 +171,19 @@ export function ProfileModal({ open, onClose }: Props) {
               helperText={profileForm.formState.errors.email?.message}
               {...profileForm.register('email')}
             />
-            <TextField
-              label="Telefone"
-              size="small"
-              fullWidth
-              {...profileForm.register('phone')}
+            <Controller
+              name="phone"
+              control={profileForm.control}
+              render={({ field }) => (
+                <MuiTelInput
+                  label="Telefone"
+                  size="small"
+                  fullWidth
+                  defaultCountry="BR"
+                  value={field.value || ''}
+                  onChange={(v) => field.onChange(v)}
+                />
+              )}
             />
           </Stack>
 

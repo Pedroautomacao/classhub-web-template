@@ -22,12 +22,14 @@ import {
   Autocomplete,
 } from '@mui/material'
 import { Download, InsertDriveFile } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 import { DatePickerField } from '@/components/common/DatePickerField'
 import { contractsApi } from '@/api/contracts.api'
 import { filesApi, downloadBase64File } from '@/api/files.api'
 import { settingsApi } from '@/api/settings.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 import type { Student, AvailabilityDay } from '@/types'
 
 function maskCpf(cpf: string) {
@@ -85,7 +87,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
       reset({
         full_name: student.full_name,
         email: student.email ?? '',
-        phone: student.phone ?? '',
+        phone: digitsToE164(student.phone),
         instagram: student.instagram ?? '',
         cpf: student.cpf ? maskCpf(student.cpf) : '',
         birth_date: student.birth_date ?? '',
@@ -120,7 +122,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
         <Stack component="form" id="student-form" onSubmit={handleSubmit((values) => onSubmit({
           ...values,
           email: values.email || null,
-          phone: values.phone || null,
+          phone: e164ToDigits(values.phone) || null,
           instagram: values.instagram || null,
           birth_date: values.birth_date || null,
           availability: values.availability?.length ? values.availability : null,
@@ -145,7 +147,19 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Telefone" fullWidth {...register('phone')} />
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <MuiTelInput
+                    label="Telefone"
+                    fullWidth
+                    defaultCountry="BR"
+                    value={field.value || ''}
+                    onChange={(v) => field.onChange(v)}
+                  />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Instagram" fullWidth {...register('instagram')} />

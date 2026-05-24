@@ -14,6 +14,7 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
+import { formatPhoneDisplay, whatsappUrl } from '@/utils/phone'
 import type { PaymentRow, PaymentMethod, ContractDisplayStatus } from '@/types'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -46,12 +47,6 @@ const CONTRACT_STATUS_COLOR: Record<ContractDisplayStatus, 'success' | 'warning'
   no_contract: 'default',
 }
 
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return phone
-}
 
 function formatBRL(v: string | number | null | undefined): string {
   if (v == null) return '—'
@@ -139,9 +134,8 @@ export function PaymentsListPage() {
   }
 
   const handleWhatsApp = (phone: string | null) => {
-    if (!phone) return
-    const digits = phone.replace(/\D/g, '')
-    window.open(`https://wa.me/${digits}`, '_blank')
+    const url = whatsappUrl(phone)
+    if (url) window.open(url, '_blank')
   }
 
   const columns: Column<PaymentRow>[] = [
@@ -176,7 +170,7 @@ export function PaymentsListPage() {
               <WhatsApp fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Typography variant="body2">{maskPhone(r.phone)}</Typography>
+          <Typography variant="body2">{formatPhoneDisplay(r.phone)}</Typography>
         </Stack>
       ) : '—',
     },

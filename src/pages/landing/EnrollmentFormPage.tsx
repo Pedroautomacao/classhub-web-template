@@ -22,9 +22,11 @@ import {
   MenuItem,
 } from '@mui/material'
 import { CheckCircle, School } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { DatePickerField } from '@/components/common/DatePickerField'
+import { e164ToDigits } from '@/utils/phone'
 
 const PAYMENT_METHODS = [
   { value: 'credit_card', label: 'Cartão de crédito — Assinatura' },
@@ -34,7 +36,7 @@ const PAYMENT_METHODS = [
 const schema = z.object({
   full_name: z.string().min(3, 'Nome completo é obrigatório'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  phone: z.string().min(10, 'Telefone inválido'),
+  phone: z.string().min(1, 'Telefone obrigatório'),
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
   cpf: z.string().optional(),
@@ -80,7 +82,7 @@ export function EnrollmentFormPage() {
       await enrollmentApi.publicEnroll({
         full_name: values.full_name,
         email: values.email || undefined,
-        phone: values.phone,
+        phone: e164ToDigits(values.phone),
         instagram: values.instagram || undefined,
         birth_date: values.birth_date || undefined,
         cpf: values.cpf || undefined,
@@ -158,12 +160,20 @@ export function EnrollmentFormPage() {
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Telefone / WhatsApp *"
-                  fullWidth
-                  error={!!errors.phone}
-                  helperText={errors.phone?.message}
-                  {...register('phone')}
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <MuiTelInput
+                      label="Telefone / WhatsApp *"
+                      fullWidth
+                      defaultCountry="BR"
+                      value={field.value || ''}
+                      onChange={(v) => field.onChange(v)}
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message}
+                    />
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>

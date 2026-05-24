@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -8,8 +8,10 @@ import {
   CircularProgress, Typography, Divider, FormControlLabel, Checkbox, Box, Chip,
   useMediaQuery, useTheme,
 } from '@mui/material'
+import { MuiTelInput } from 'mui-tel-input'
 import type { User } from '@/types'
 import { Permission } from '@/utils/permissions'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 
 const PERMISSION_GROUPS = [
   { label: 'Alunos', permissions: [Permission.STUDENTS_READ, Permission.STUDENTS_WRITE, Permission.STUDENTS_DELETE] },
@@ -59,7 +61,7 @@ export function UserFormModal({ open, user, loading = false, onClose, onSubmit }
   const isEdit = !!user
   const [selectedPerms, setSelectedPerms] = useState<string[]>([])
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
@@ -68,7 +70,7 @@ export function UserFormModal({ open, user, loading = false, onClose, onSubmit }
   useEffect(() => {
     if (open) {
       reset(user
-        ? { full_name: user.full_name, username: user.username, email: user.email ?? '', phone: user.phone ?? '', password: '', role: user.role }
+        ? { full_name: user.full_name, username: user.username, email: user.email ?? '', phone: digitsToE164(user.phone), password: '', role: user.role }
         : { full_name: '', username: '', email: '', phone: '', password: '', role: 'secretary' }
       )
       setSelectedPerms(user?.permissions ?? [])
@@ -92,7 +94,7 @@ export function UserFormModal({ open, user, loading = false, onClose, onSubmit }
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={fullScreen}>
       <DialogTitle>{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
       <DialogContent>
-        <Stack component="form" id="user-form" onSubmit={handleSubmit((v) => onSubmit(v, selectedPerms))} spacing={3} sx={{ pt: 1 }}>
+        <Stack component="form" id="user-form" onSubmit={handleSubmit((v) => onSubmit({ ...v, phone: e164ToDigits(v.phone) }, selectedPerms))} spacing={3} sx={{ pt: 1 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Nome completo *" fullWidth error={!!errors.full_name} helperText={errors.full_name?.message} {...register('full_name')} />
@@ -104,7 +106,21 @@ export function UserFormModal({ open, user, loading = false, onClose, onSubmit }
               <TextField label="E-mail *" type="email" fullWidth error={!!errors.email} helperText={errors.email?.message} {...register('email')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Telefone *" fullWidth error={!!errors.phone} helperText={errors.phone?.message} {...register('phone')} />
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <MuiTelInput
+                    label="Telefone *"
+                    fullWidth
+                    defaultCountry="BR"
+                    value={field.value || ''}
+                    onChange={(v) => field.onChange(v)}
+                    error={!!errors.phone}
+                    helperText={errors.phone?.message}
+                  />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label={isEdit ? 'Nova senha (deixe em branco para manter)' : 'Senha *'} type="password" fullWidth error={!!errors.password} helperText={errors.password?.message} {...register('password')} />

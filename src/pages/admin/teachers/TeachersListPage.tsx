@@ -16,16 +16,11 @@ import { Permission } from '@/utils/permissions'
 import { exportToXlsx } from '@/utils/export'
 import type { Teacher } from '@/types'
 
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return phone
-}
+import { formatPhoneDisplay, whatsappUrl } from '@/utils/phone'
 
 function openWhatsApp(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  window.open(`https://wa.me/${digits}`, '_blank')
+  const url = whatsappUrl(phone)
+  if (url) window.open(url, '_blank')
 }
 
 export function TeachersListPage() {
@@ -130,7 +125,7 @@ export function TeachersListPage() {
               <WhatsApp fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Typography variant="body2">{maskPhone(t.phone)}</Typography>
+          <Typography variant="body2">{formatPhoneDisplay(t.phone)}</Typography>
         </Stack>
       ) : '—',
     },

@@ -17,14 +17,8 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
+import { formatPhoneDisplay } from '@/utils/phone'
 import type { LevelingFormResponse, ContactStatus } from '@/types'
-
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return phone
-}
 
 const CONTACT_STATUS_LABELS: Record<ContactStatus, string> = {
   analyze: 'Analisar',
@@ -115,7 +109,7 @@ export function LevelingListPage() {
   const columns: Column<LevelingFormResponse>[] = [
     { key: 'full_name', label: 'Nome' },
     { key: 'email', label: 'E-mail' },
-    { key: 'phone', label: 'Telefone', render: (f) => maskPhone(f.phone) },
+    { key: 'phone', label: 'Telefone', render: (f) => formatPhoneDisplay(f.phone) },
     {
       key: 'created_at', label: 'Data',
       render: (f) => dayjs(f.created_at).format('DD/MM/YYYY'),
@@ -225,7 +219,7 @@ export function LevelingListPage() {
               {([
                 ['Nome', viewForm.full_name],
                 ['E-mail', viewForm.email],
-                ['Telefone', maskPhone(viewForm.phone)],
+                ['Telefone', formatPhoneDisplay(viewForm.phone)],
                 ['Instagram', viewForm.instagram],
                 ['CPF', viewForm.cpf],
                 ['Nascimento', viewForm.birth_date ? dayjs(viewForm.birth_date).format('DD/MM/YYYY') : null],

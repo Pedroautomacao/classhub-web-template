@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -7,10 +7,12 @@ import {
   Alert, Box, Button, CircularProgress, Divider, Stack, TextField, Typography,
 } from '@mui/material'
 import { Save, InfoOutlined } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido').min(1),
@@ -19,13 +21,6 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
-
-function maskPhone(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 11)
-  if (digits.length <= 10)
-    return digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
-  return digits.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
-}
 
 export function TeacherProfileTab() {
   const qc = useQueryClient()
@@ -37,7 +32,7 @@ export function TeacherProfileTab() {
     retry: false,
   })
 
-  const { register, handleSubmit, reset, watch, control, setValue, formState: { errors, isDirty } } =
+  const { register, handleSubmit, reset, watch, control, formState: { errors, isDirty } } =
     useForm<FormValues>({
       resolver: zodResolver(schema) as any,
       defaultValues: { email: '', phone: '', availability: [] },
@@ -47,7 +42,7 @@ export function TeacherProfileTab() {
     if (teacher) {
       reset({
         email: teacher.email,
-        phone: teacher.phone ? maskPhone(teacher.phone) : '',
+        phone: digitsToE164(teacher.phone),
         availability: teacher.availability ?? [],
       })
     }
@@ -82,7 +77,7 @@ export function TeacherProfileTab() {
   return (
     <Box
       component="form"
-      onSubmit={handleSubmit((v) => mutation.mutate(v))}
+      onSubmit={handleSubmit((v) => mutation.mutate({ ...v, phone: e164ToDigits(v.phone) || undefined }))}
       sx={{ maxWidth: 600 }}
     >
       <Stack spacing={3}>
@@ -102,12 +97,18 @@ export function TeacherProfileTab() {
           {...register('email')}
         />
 
-        <TextField
-          label="Telefone"
-          fullWidth
-          placeholder="(11) 99999-9999"
-          {...register('phone')}
-          onChange={(e) => setValue('phone', maskPhone(e.target.value), { shouldDirty: true })}
+        <Controller
+          name="phone"
+          control={control}
+          render={({ field }) => (
+            <MuiTelInput
+              label="Telefone"
+              fullWidth
+              defaultCountry="BR"
+              value={field.value || ''}
+              onChange={(v) => field.onChange(v)}
+            />
+          )}
         />
 
         <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />

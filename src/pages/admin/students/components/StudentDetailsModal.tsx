@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import { contractsApi } from '@/api/contracts.api'
 import { StudentStatusChip } from './StudentStatusChip'
 import { DAYS } from '@/utils/availability'
+import { formatPhoneDisplay, whatsappUrl } from '@/utils/phone'
 import type { Student, PaymentMethod, ContractStatus } from '@/types'
 
 const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
@@ -31,16 +32,9 @@ const CONTRACT_STATUS_COLOR: Record<ContractStatus, 'success' | 'error' | 'defau
 
 const DAY_LABEL: Record<string, string> = Object.fromEntries(DAYS.map((d) => [d.value, d.label]))
 
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return phone
-}
-
 function openWhatsApp(phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  window.open(`https://wa.me/${digits}`, '_blank')
+  const url = whatsappUrl(phone)
+  if (url) window.open(url, '_blank')
 }
 
 function formatBRL(v: string | number | null | undefined): string {
@@ -123,7 +117,7 @@ export function StudentDetailsModal({ student, onClose }: Props) {
                         <WhatsApp fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Typography variant="body2">{maskPhone(student.phone)}</Typography>
+                    <Typography variant="body2">{formatPhoneDisplay(student.phone)}</Typography>
                   </Stack>
                 ) : <Typography variant="body2">—</Typography>}
               </Field>

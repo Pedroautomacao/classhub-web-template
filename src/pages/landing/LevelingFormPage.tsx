@@ -28,6 +28,8 @@ import { levelingApi } from '@/api/leveling.api'
 import { levelingTemplatesApi } from '@/api/leveling-templates.api'
 import { settingsApi } from '@/api/settings.api'
 import { DatePickerField } from '@/components/common/DatePickerField'
+import { MuiTelInput } from 'mui-tel-input'
+import { e164ToDigits } from '@/utils/phone'
 import type { TemplateQuestion } from '@/types'
 
 // ── Personal info schema (fixed) ─────────────────────────────────────────────
@@ -35,7 +37,7 @@ import type { TemplateQuestion } from '@/types'
 const personalSchema = z.object({
   full_name: z.string().min(3, 'Nome completo é obrigatório'),
   email: z.string().email('E-mail inválido'),
-  phone: z.string().min(10, 'Telefone inválido'),
+  phone: z.string().min(1, 'Telefone obrigatório'),
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
   cpf: z.string().optional(),
@@ -175,7 +177,7 @@ export function LevelingFormPage() {
       await levelingApi.submit({
         full_name: personal.full_name,
         email: personal.email,
-        phone: personal.phone,
+        phone: e164ToDigits(personal.phone),
         instagram: personal.instagram || undefined,
         birth_date: personal.birth_date || undefined,
         cpf: personal.cpf || undefined,
@@ -253,12 +255,20 @@ export function LevelingFormPage() {
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Telefone / WhatsApp *"
-                  fullWidth
-                  error={!!errors.phone}
-                  helperText={errors.phone?.message}
-                  {...register('phone')}
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <MuiTelInput
+                      label="Telefone / WhatsApp *"
+                      fullWidth
+                      defaultCountry="BR"
+                      value={field.value || ''}
+                      onChange={(v) => field.onChange(v)}
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message}
+                    />
+                  )}
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>

@@ -11,6 +11,7 @@ import {
   IconButton, Tooltip,
 } from '@mui/material'
 import { UploadFile, InsertDriveFile, Close } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 import { DatePickerField } from '@/components/common/DatePickerField'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -18,6 +19,7 @@ import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { fileToBase64 } from '@/api/files.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
+import { e164ToDigits } from '@/utils/phone'
 import { getApiError } from '@/utils/errors'
 
 const schema = z.object({
@@ -84,7 +86,7 @@ export function EnrollmentPage() {
     mutation.mutate({
       ...values,
       email: values.email || undefined,
-      phone: values.phone || undefined,
+      phone: e164ToDigits(values.phone) || undefined,
       instagram: values.instagram || undefined,
       cpf: values.cpf || undefined,
       birth_date: values.birth_date || undefined,
@@ -128,7 +130,19 @@ export function EnrollmentPage() {
               <TextField label="E-mail" type="email" fullWidth error={!!errors.email} helperText={errors.email?.message} {...register('email')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Telefone" fullWidth {...register('phone')} />
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <MuiTelInput
+                    label="Telefone"
+                    fullWidth
+                    defaultCountry="BR"
+                    value={field.value || ''}
+                    onChange={(v) => field.onChange(v)}
+                  />
+                )}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Instagram" fullWidth {...register('instagram')} />

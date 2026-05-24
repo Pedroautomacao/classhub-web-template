@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -9,9 +9,11 @@ import {
   Switch, CircularProgress, useMediaQuery, useTheme,
   Divider, InputAdornment, Typography,
 } from '@mui/material'
+import { MuiTelInput } from 'mui-tel-input'
 import type { Teacher, User } from '@/types'
 import { teachersApi } from '@/api/teachers.api'
 import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 
 const schema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
@@ -57,7 +59,7 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
         ? {
             name: teacher.name,
             email: teacher.email,
-            phone: teacher.phone ?? '',
+            phone: digitsToE164(teacher.phone),
             is_training: teacher.is_training,
             hourly_rate: teacher.hourly_rate,
             availability: teacher.availability ?? [],
@@ -72,7 +74,7 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
     if (user) {
       setValue('name', user.full_name)
       setValue('email', user.email ?? '')
-      setValue('phone', user.phone ?? '')
+      setValue('phone', digitsToE164(user.phone))
     }
   }
 
@@ -80,7 +82,7 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>{isEdit ? 'Editar Professor' : 'Novo Professor'}</DialogTitle>
       <DialogContent sx={{ overflowX: 'hidden' }}>
-        <Stack component="form" id="teacher-form" onSubmit={handleSubmit(onSubmit)} spacing={2} sx={{ pt: 1 }}>
+        <Stack component="form" id="teacher-form" onSubmit={handleSubmit((v) => onSubmit({ ...v, phone: e164ToDigits(v.phone) || undefined }))} spacing={2} sx={{ pt: 1 }}>
 
           {!isEdit && (
             <>
@@ -135,14 +137,19 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="Telefone"
-                fullWidth
-                slotProps={{
-                  inputLabel: { shrink: !!selectedUser || undefined },
-                  input: { readOnly: !!selectedUser },
-                }}
-                {...register('phone')}
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <MuiTelInput
+                    label="Telefone"
+                    fullWidth
+                    defaultCountry="BR"
+                    disabled={!!selectedUser}
+                    value={field.value || ''}
+                    onChange={(v) => field.onChange(v)}
+                  />
+                )}
               />
             </Grid>
           </Grid>

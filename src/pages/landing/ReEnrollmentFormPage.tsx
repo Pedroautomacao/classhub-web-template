@@ -17,12 +17,13 @@ import {
   Stack,
   Divider,
   MenuItem,
-  InputAdornment,
 } from '@mui/material'
 import { CheckCircle, School, Search, Person } from '@mui/icons-material'
+import { MuiTelInput } from 'mui-tel-input'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { DatePickerField } from '@/components/common/DatePickerField'
+import { digitsToE164, e164ToDigits } from '@/utils/phone'
 import type { StudentLookupResult } from '@/types'
 
 function maskCpf(value: string) {
@@ -34,18 +35,6 @@ function maskCpf(value: string) {
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
 }
 
-function maskPhone(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 11)
-  if (digits.length <= 10) {
-    return digits
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{4})(\d)/, '$1-$2')
-  }
-  return digits
-    .replace(/(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2')
-}
-
 const PAYMENT_METHODS = [
   { value: 'credit_card', label: 'Cartão de crédito — Assinatura' },
   { value: 'pix', label: 'PIX — Valor integral do plano' },
@@ -54,7 +43,7 @@ const PAYMENT_METHODS = [
 const schema = z.object({
   cpf: z.string().min(14, 'CPF inválido'),
   email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
-  phone: z.string().min(14, 'Telefone inválido'),
+  phone: z.string().min(1, 'Telefone obrigatório'),
   instagram: z.string().optional(),
   birth_date: z.string().min(1, 'Data de nascimento obrigatória'),
   plan_id: z.string().min(1, 'Selecione um plano'),
@@ -108,7 +97,7 @@ export function ReEnrollmentFormPage() {
       const found = await enrollmentApi.lookupByCpf(cpf.replace(/\D/g, ''))
       setStudent(found)
       setValue('email', found.email ?? '', { shouldValidate: false })
-      setValue('phone', found.phone ? maskPhone(found.phone) : '', { shouldValidate: false })
+      setValue('phone', digitsToE164(found.phone), { shouldValidate: false })
       setValue('instagram', found.instagram ?? '', { shouldValidate: false })
       setValue('birth_date', found.birth_date ?? '', { shouldValidate: false })
     } catch {
@@ -125,7 +114,7 @@ export function ReEnrollmentFormPage() {
       await enrollmentApi.publicReEnroll({
         cpf: values.cpf.replace(/\D/g, ''),
         email: values.email,
-        phone: values.phone,
+        phone: e164ToDigits(values.phone),
         instagram: values.instagram || undefined,
         birth_date: values.birth_date,
         plan_id: values.plan_id,
@@ -252,16 +241,14 @@ export function ReEnrollmentFormPage() {
                       name="phone"
                       control={control}
                       render={({ field }) => (
-                        <TextField
+                        <MuiTelInput
                           label="Telefone *"
                           fullWidth
-                          placeholder="(11) 99999-9999"
+                          defaultCountry="BR"
+                          value={field.value || ''}
+                          onChange={(v) => field.onChange(v)}
                           error={!!errors.phone}
                           helperText={errors.phone?.message}
-                          value={field.value}
-                          onChange={(e) => field.onChange(maskPhone(e.target.value))}
-                          inputProps={{ inputMode: 'numeric' }}
-                          slotProps={{ input: { startAdornment: <InputAdornment position="start">📱</InputAdornment> } }}
                         />
                       )}
                     />
