@@ -27,7 +27,7 @@ const schema = z.object({
   email: z.string().email('E-mail inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
   instagram: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: z.string().min(1, 'CPF obrigatório'),
   birth_date: z.string().optional(),
   availability: z.array(availabilityDaySchema).optional(),
   coupon: z.string().optional(),
@@ -88,7 +88,7 @@ export function EnrollmentPage() {
       email: values.email || undefined,
       phone: e164ToDigits(values.phone) || undefined,
       instagram: values.instagram || undefined,
-      cpf: values.cpf || undefined,
+      cpf: values.cpf.replace(/\D/g, ''),
       birth_date: values.birth_date || undefined,
       availability: values.availability?.length ? values.availability : undefined,
       coupon: values.coupon || undefined,
@@ -148,7 +148,7 @@ export function EnrollmentPage() {
               <TextField label="Instagram" fullWidth {...register('instagram')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="CPF" fullWidth {...register('cpf')} />
+              <TextField label="CPF *" fullWidth error={!!errors.cpf} helperText={errors.cpf?.message} {...register('cpf')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller

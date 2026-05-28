@@ -26,14 +26,20 @@ const CONTACT_STATUS_LABELS: Record<ContactStatus, string> = {
   not_interested: 'Sem interesse',
   ghosted: 'Sem retorno',
   waiting_list: 'Lista de espera',
+  negotiation: 'Em negociação',
+  trial_class: 'Aula experimental',
+  awaiting_response: 'Aguardando retorno',
 }
 
-const CONTACT_STATUS_COLORS: Record<ContactStatus, 'default' | 'warning' | 'success' | 'error' | 'info'> = {
+const CONTACT_STATUS_COLORS: Record<ContactStatus, 'default' | 'warning' | 'success' | 'error' | 'info' | 'primary'> = {
   analyze: 'warning',
   enrolled: 'success',
   not_interested: 'error',
   ghosted: 'default',
   waiting_list: 'info',
+  negotiation: 'info',
+  trial_class: 'primary',
+  awaiting_response: 'warning',
 }
 
 export function LevelingListPage() {
@@ -176,6 +182,9 @@ export function LevelingListPage() {
         <ToggleButtonGroup size="small" exclusive value={statusFilter ?? 'all'} onChange={(_, v) => { if (v !== null) setStatusFilter(v === 'all' ? undefined : v) }}>
           <ToggleButton value="all">Todos</ToggleButton>
           <ToggleButton value="analyze">Analisar</ToggleButton>
+          <ToggleButton value="negotiation">Em negociação</ToggleButton>
+          <ToggleButton value="trial_class">Aula experimental</ToggleButton>
+          <ToggleButton value="awaiting_response">Aguardando retorno</ToggleButton>
           <ToggleButton value="enrolled">Matriculados</ToggleButton>
           <ToggleButton value="waiting_list">Lista de espera</ToggleButton>
           <ToggleButton value="not_interested">Sem interesse</ToggleButton>

@@ -39,7 +39,7 @@ const schema = z.object({
   phone: z.string().min(1, 'Telefone obrigatório'),
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: z.string().min(1, 'CPF obrigatório'),
   coupon: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
   payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
@@ -85,7 +85,7 @@ export function EnrollmentFormPage() {
         phone: e164ToDigits(values.phone),
         instagram: values.instagram || undefined,
         birth_date: values.birth_date || undefined,
-        cpf: values.cpf || undefined,
+        cpf: values.cpf.replace(/\D/g, ''),
         coupon: values.coupon || undefined,
         plan_id: values.plan_id,
         payment_method: values.payment_method,
@@ -200,8 +200,10 @@ export function EnrollmentFormPage() {
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
-                  label="CPF (opcional)"
+                  label="CPF *"
                   fullWidth
+                  error={!!errors.cpf}
+                  helperText={errors.cpf?.message}
                   {...register('cpf')}
                 />
               </Grid>

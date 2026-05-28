@@ -4,6 +4,9 @@ export type ContactStatus =
   | 'not_interested'
   | 'ghosted'
   | 'waiting_list'
+  | 'negotiation'
+  | 'trial_class'
+  | 'awaiting_response'
 
 export interface LevelingFormCreate {
   full_name: string
