@@ -1,5 +1,7 @@
 import { Box, Container, Paper, Stack, Typography } from '@mui/material'
+import { ThemeProvider } from '@mui/material/styles'
 import type { ReactNode } from 'react'
+import { buildTheme } from '@/theme'
 import { luminaGradients, luminaPalette, luminaShadows } from '@/theme/luminaAcademic'
 
 interface AuthShellProps {
@@ -13,6 +15,10 @@ interface AuthShellProps {
   icon?: ReactNode
 }
 
+// Rotas /auth/* rodam sempre em light mode — não devem herdar o toggle de
+// tema do admin. Calculado fora do componente pra não recriar a cada render.
+const authTheme = buildTheme('light')
+
 /**
  * Layout compartilhado pelas rotas /auth/* (recuperação, validação, redefinição).
  * Fundo com gradiente "Lumina Academic", card central com sombra elevada.
@@ -20,6 +26,7 @@ interface AuthShellProps {
  */
 export function AuthShell({ title, subtitle, children, footer, icon }: AuthShellProps) {
   return (
+    <ThemeProvider theme={authTheme}>
     <Box
       sx={{
         minHeight: '100vh',
@@ -88,5 +95,6 @@ export function AuthShell({ title, subtitle, children, footer, icon }: AuthShell
         )}
       </Container>
     </Box>
+    </ThemeProvider>
   )
 }
