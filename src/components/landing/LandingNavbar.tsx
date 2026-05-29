@@ -62,7 +62,11 @@ export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) 
       >
         <Toolbar
           disableGutters
-          sx={{ height: { xs: 64, md: 80 }, px: { xs: 2, md: 5 }, maxWidth: 1200, mx: 'auto', width: '100%' }}
+          sx={{
+            height: { xs: 64, md: 80 },
+            px: { xs: 2, md: 5, lg: 8 },
+            width: '100%',
+          }}
         >
           {/* 3 áreas equally weighted: brand esquerda / menus centro / CTA direita.
               Em mobile (xs/sm) o brand fica colado na esquerda e o hamburger
