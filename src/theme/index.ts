@@ -1,54 +1,58 @@
 import { createTheme } from '@mui/material/styles'
-
-// ClassHub brand palette
-const brand = {
-  teal: '#76c5d5',
-  tealDark: '#357e8c',
-  tealDeep: '#1f5f6e',
-  purple: '#7600ed',
-  purpleLight: '#9b3af0',
-  purpleDark: '#5200a8',
-  navy: '#1f1b34',
-  navyLight: '#2e2a46',
-  magenta: '#d946a8',
-}
+import {
+  luminaPalette,
+  luminaFonts,
+  luminaShape,
+  luminaShadows,
+} from './luminaAcademic'
 
 export function buildTheme(mode: 'light' | 'dark') {
+  const isDark = mode === 'dark'
   return createTheme({
     palette: {
       mode,
       primary: {
-        main: brand.tealDark,
-        light: brand.teal,
-        dark: brand.tealDeep,
-        contrastText: '#ffffff',
+        main: luminaPalette.primary.main,
+        light: luminaPalette.primary.light,
+        dark: luminaPalette.primary.dark,
+        contrastText: luminaPalette.primary.contrastText,
       },
       secondary: {
-        main: brand.purple,
-        light: brand.purpleLight,
-        dark: brand.purpleDark,
-        contrastText: '#ffffff',
+        main: luminaPalette.secondary.main,
+        light: luminaPalette.secondary.light,
+        dark: luminaPalette.secondary.dark,
+        contrastText: luminaPalette.secondary.contrastText,
+      },
+      error: {
+        main: luminaPalette.error.main,
+        contrastText: luminaPalette.error.contrastText,
       },
       background: {
-        default: mode === 'light' ? '#f0f7f9' : '#14111f',
-        paper: mode === 'light' ? '#ffffff' : '#1f1b34',
+        default: isDark ? '#14171a' : luminaPalette.neutral.bg,
+        paper: isDark ? '#1f2326' : luminaPalette.neutral.surface,
       },
       text: {
-        primary: mode === 'light' ? brand.navy : '#f0f0f0',
+        primary: isDark ? '#f0f1f2' : luminaPalette.neutral.text,
+        secondary: isDark ? '#cbd5d6' : luminaPalette.neutral.textVariant,
       },
+      divider: isDark ? '#2e3132' : luminaPalette.neutral.outlineVariant,
     },
     typography: {
-      fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: luminaFonts.body,
+      fontWeightRegular: 400,
       fontWeightMedium: 500,
-      h1: { fontWeight: 700 },
-      h2: { fontWeight: 700 },
-      h3: { fontWeight: 600 },
-      h4: { fontWeight: 600 },
-      h5: { fontWeight: 600 },
-      h6: { fontWeight: 600 },
+      fontWeightBold: 700,
+      h1: { fontFamily: luminaFonts.headline, fontWeight: 700, letterSpacing: '-0.02em' },
+      h2: { fontFamily: luminaFonts.headline, fontWeight: 700 },
+      h3: { fontFamily: luminaFonts.headline, fontWeight: 600 },
+      h4: { fontFamily: luminaFonts.headline, fontWeight: 600 },
+      h5: { fontFamily: luminaFonts.headline, fontWeight: 600 },
+      h6: { fontFamily: luminaFonts.headline, fontWeight: 600 },
+      subtitle1: { fontFamily: luminaFonts.body, fontWeight: 600 },
+      button: { fontFamily: luminaFonts.body, fontWeight: 600, textTransform: 'none' },
     },
     shape: {
-      borderRadius: 10,
+      borderRadius: luminaShape.borderRadiusBase,
     },
     components: {
       MuiButton: {
@@ -56,31 +60,47 @@ export function buildTheme(mode: 'light' | 'dark') {
           root: {
             textTransform: 'none',
             fontWeight: 600,
-            borderRadius: 8,
+            borderRadius: luminaShape.borderRadiusBase,
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            boxShadow: '0 2px 12px rgba(53,126,140,0.10)',
+            borderRadius: luminaShape.borderRadiusCard,
+            boxShadow: luminaShadows.card,
           },
         },
       },
       MuiPaper: {
         styleOverrides: {
           root: {
-            boxShadow: '0 2px 12px rgba(53,126,140,0.08)',
+            backgroundImage: 'none',
+          },
+          elevation1: {
+            boxShadow: luminaShadows.card,
           },
         },
       },
       MuiAppBar: {
         styleOverrides: {
           root: {
-            // backgroundImage override prevents MUI dark-mode elevation overlay from washing out the gradient
-            backgroundImage: `linear-gradient(90deg, ${brand.tealDeep} 0%, ${brand.tealDark} 100%)`,
-            backgroundColor: brand.tealDeep,
+            backgroundImage: `linear-gradient(90deg, ${luminaPalette.primary.dark} 0%, ${luminaPalette.primary.main} 100%)`,
+            backgroundColor: luminaPalette.primary.dark,
             color: '#ffffff',
+            boxShadow: luminaShadows.card,
+          },
+        },
+      },
+      MuiTextField: {
+        defaultProps: {
+          variant: 'outlined',
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: luminaShape.borderRadiusBase,
           },
         },
       },
