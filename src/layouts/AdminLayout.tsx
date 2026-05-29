@@ -44,7 +44,11 @@ export function AdminLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          bgcolor: 'background.default',
+          // Fundo do admin propositalmente um tom levemente colorido pra
+          // contrastar com o Paper/Card (#ffffff) das tabelas — antes era
+          // 'background.default' (cinza quase branco) e os cabeçalhos das
+          // tabelas sumiam contra o fundo.
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#14111f' : '#f0f7f9',
           minHeight: '100vh',
           ml: { md: desktopOpen ? `${DRAWER_WIDTH}px` : 0 },
           mt: '64px',
