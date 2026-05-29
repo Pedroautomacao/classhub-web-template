@@ -41,7 +41,10 @@ export function HeroSection({
         textAlign: 'center',
         background,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        // 'center top' em vez de 'center' — em telas ultra-wide a imagem é
+        // cortada vertical. Ancorando no topo, o corte cai na parte inferior
+        // (onde tipicamente há menos conteúdo importante), preservando rostos.
+        backgroundPosition: 'center top',
         color: '#ffffff',
       }}
     >
