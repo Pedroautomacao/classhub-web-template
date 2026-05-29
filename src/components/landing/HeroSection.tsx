@@ -33,7 +33,10 @@ export function HeroSection({
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        py: { xs: 8, md: 16 },
+        // Margem superior mais generosa pra dar respiro entre a navbar sticky
+        // e o título do hero.
+        pt: { xs: 12, md: 22 },
+        pb: { xs: 10, md: 18 },
         px: { xs: 2, md: 0 },
         textAlign: 'center',
         background,

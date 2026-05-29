@@ -64,26 +64,28 @@ export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) 
           disableGutters
           sx={{ height: { xs: 64, md: 80 }, px: { xs: 2, md: 5 }, maxWidth: 1200, mx: 'auto', width: '100%' }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              flexGrow: 0,
-              fontFamily: '"Hanken Grotesk", sans-serif',
-              fontWeight: 700,
-              fontSize: { xs: 22, md: 24 },
-              color: 'primary.main',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {schoolName}
-          </Typography>
-
-          <Box sx={{ flexGrow: 1 }} />
+          {/* 3 áreas equally weighted: brand esquerda / menus centro / CTA direita.
+              Em mobile (xs/sm) o brand fica colado na esquerda e o hamburger
+              substitui menus+CTA. */}
+          <Box sx={{ flex: { xs: '0 0 auto', md: 1 }, display: 'flex', justifyContent: 'flex-start' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: '"Hanken Grotesk", sans-serif',
+                fontWeight: 700,
+                fontSize: { xs: 22, md: 24 },
+                color: 'primary.main',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              {schoolName}
+            </Typography>
+          </Box>
 
           <Stack
             direction="row"
             spacing={4}
-            sx={{ display: { xs: 'none', md: 'flex' }, mr: 4 }}
+            sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center' }}
             alignItems="center"
           >
             {NAV_LINKS.map((link) => (
@@ -105,31 +107,33 @@ export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) 
             ))}
           </Stack>
 
-          <Button
-            variant="contained"
-            onClick={onLoginClick}
-            sx={{
-              display: { xs: 'none', md: 'inline-flex' },
-              borderRadius: 999,
-              px: 3,
-              py: 1.25,
-              fontWeight: 700,
-              fontSize: 14,
-              boxShadow: '0px 2px 8px rgba(27, 101, 108, 0.18)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Entrar como Administrador
-          </Button>
+          <Box sx={{ flex: { xs: 1, md: 1 }, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              onClick={onLoginClick}
+              sx={{
+                display: { xs: 'none', md: 'inline-flex' },
+                borderRadius: 999,
+                px: 3,
+                py: 1.25,
+                fontWeight: 700,
+                fontSize: 14,
+                boxShadow: '0px 2px 8px rgba(27, 101, 108, 0.18)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Entrar como Administrador
+            </Button>
 
-          <IconButton
-            aria-label="Abrir menu"
-            edge="end"
-            onClick={() => setDrawerOpen(true)}
-            sx={{ display: { xs: 'inline-flex', md: 'none' }, color: 'primary.main' }}
-          >
-            <MenuIcon sx={{ fontSize: 32 }} />
-          </IconButton>
+            <IconButton
+              aria-label="Abrir menu"
+              edge="end"
+              onClick={() => setDrawerOpen(true)}
+              sx={{ display: { xs: 'inline-flex', md: 'none' }, color: 'primary.main' }}
+            >
+              <MenuIcon sx={{ fontSize: 32 }} />
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
