@@ -20,9 +20,10 @@ interface LandingNavbarProps {
 }
 
 const NAV_LINKS = [
+  { label: 'Cursos', href: '#planos' },
   { label: 'Metodologia', href: '#metodologia' },
   { label: 'Planos', href: '#planos' },
-  { label: 'Nivelamento', href: '#hero' },
+  { label: 'Contato', href: '#contato' },
 ]
 
 export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) {
@@ -115,9 +116,10 @@ export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) 
               fontWeight: 700,
               fontSize: 14,
               boxShadow: '0px 2px 8px rgba(27, 101, 108, 0.18)',
+              whiteSpace: 'nowrap',
             }}
           >
-            Entrar
+            Entrar como Administrador
           </Button>
 
           <IconButton
@@ -187,7 +189,7 @@ export function LandingNavbar({ schoolName, onLoginClick }: LandingNavbarProps) 
           onClick={handleLoginClick}
           sx={{ mt: 'auto', mb: 4, borderRadius: 2, py: 1.75, fontWeight: 700 }}
         >
-          Entrar
+          Entrar como Administrador
         </Button>
       </Drawer>
     </>

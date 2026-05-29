@@ -13,7 +13,7 @@ export function LandingFooter({ schoolName, whatsapp, instagram }: LandingFooter
   const year = new Date().getFullYear()
 
   return (
-    <Box component="footer" sx={{ bgcolor: luminaPalette.neutral.surfaceHighest }}>
+    <Box component="footer" id="contato" sx={{ bgcolor: luminaPalette.neutral.surfaceHighest }}>
       <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 }, px: { xs: 2, md: 3 } }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
@@ -35,51 +35,6 @@ export function LandingFooter({ schoolName, whatsapp, instagram }: LandingFooter
             <Typography sx={{ color: 'text.secondary', maxWidth: 320, lineHeight: 1.6 }}>
               © {year} {schoolName}. Excelência acadêmica em idiomas.
             </Typography>
-          </Stack>
-
-          <Stack
-            direction="row"
-            spacing={4}
-            flexWrap="wrap"
-            justifyContent="center"
-            sx={{ rowGap: 1 }}
-          >
-            {whatsapp && (
-              <Box
-                component="a"
-                href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: 'text.secondary',
-                  textDecoration: 'none',
-                  transition: 'color 150ms ease',
-                  '&:hover': { color: luminaPalette.tertiary.main },
-                }}
-              >
-                WhatsApp
-              </Box>
-            )}
-            {instagram && (
-              <Box
-                component="a"
-                href={`https://instagram.com/${instagram.replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: 'text.secondary',
-                  textDecoration: 'none',
-                  transition: 'color 150ms ease',
-                  '&:hover': { color: luminaPalette.tertiary.main },
-                }}
-              >
-                Instagram
-              </Box>
-            )}
           </Stack>
 
           {(whatsapp || instagram) && (
