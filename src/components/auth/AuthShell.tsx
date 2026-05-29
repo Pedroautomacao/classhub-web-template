@@ -4,7 +4,7 @@ import { luminaGradients, luminaPalette, luminaShadows } from '@/theme/luminaAca
 
 interface AuthShellProps {
   title: string
-  subtitle?: string
+  subtitle?: ReactNode
   /** Conteúdo do card central (formulário, código, etc) */
   children: ReactNode
   /** Conteúdo opcional após o card (links auxiliares, voltar pra login, etc) */

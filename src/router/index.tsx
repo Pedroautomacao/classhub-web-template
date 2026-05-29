@@ -6,6 +6,9 @@ import { AdminLayout } from '@/layouts/AdminLayout'
 import { PrivateRoute } from './PrivateRoute'
 
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage').then((m) => ({ default: m.LandingPage })))
+const RecoverPasswordPage = lazy(() => import('@/pages/auth/RecoverPasswordPage').then((m) => ({ default: m.RecoverPasswordPage })))
+const VerifyCodePage = lazy(() => import('@/pages/auth/VerifyCodePage').then((m) => ({ default: m.VerifyCodePage })))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })))
 const LevelingFormPage = lazy(() => import('@/pages/landing/LevelingFormPage').then((m) => ({ default: m.LevelingFormPage })))
 const EnrollmentFormPage = lazy(() => import('@/pages/landing/EnrollmentFormPage').then((m) => ({ default: m.EnrollmentFormPage })))
 const ReEnrollmentFormPage = lazy(() => import('@/pages/landing/ReEnrollmentFormPage').then((m) => ({ default: m.ReEnrollmentFormPage })))
@@ -41,6 +44,11 @@ export const router = createBrowserRouter([
   // Landing standalone — não usa PublicLayout (que tem AppBar próprio); a
   // LandingPage traz sua própria navbar + footer + DemoBanner integrados.
   { path: '/', element: <Lazy><LandingPage /></Lazy> },
+  // Fluxo de recuperação de senha (Fase 7) — cada página é standalone com
+  // background gradient via AuthShell, sem header.
+  { path: '/auth/recover', element: <Lazy><RecoverPasswordPage /></Lazy> },
+  { path: '/auth/verify', element: <Lazy><VerifyCodePage /></Lazy> },
+  { path: '/auth/reset', element: <Lazy><ResetPasswordPage /></Lazy> },
   {
     element: <PublicLayout />,
     children: [
