@@ -4,12 +4,13 @@ export type HourClosingStatus = 'pending' | 'approved' | 'rejected' | 'cancelled
 
 export interface HourClosingEntry {
   id: string
-  closing_id: string
+  submission_id: string | null
   class_id: string | null
   class_name: string
   lesson_date: string
   start_time: string
   end_time: string
+  hourly_rate_snapshot: number
 }
 
 export interface HourClosing {
@@ -22,6 +23,7 @@ export interface HourClosing {
   suggested_value: number
   final_value: number
   notes: string | null
+  reviewer_response: string | null
   status: HourClosingStatus
   reviewed_by: string | null
   reviewed_at: string | null
