@@ -5,10 +5,10 @@ interface HeroSectionProps {
   schoolName: string
   welcomeText: string
   /**
-   * URL opcional de imagem dinâmica que vem do backend (campo `welcome_image`
-   * em Settings; futuramente `hero_bg_url`). Quando presente, é aplicada como
-   * background com um overlay teal por cima para preservar legibilidade.
-   * Quando ausente, o gradiente Lumina Academic é o fallback.
+   * URL opcional de imagem dinâmica que vem do backend (campo `hero_bg_url`
+   * em Settings). Quando presente, é aplicada como background com um overlay
+   * teal por cima para preservar legibilidade. Quando ausente, o gradiente
+   * Lumina Academic é o fallback.
    */
   dynamicBg?: string | null
   loading?: boolean

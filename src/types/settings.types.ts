@@ -1,7 +1,7 @@
 export interface LandingPageData {
   school_name: string
   welcome_text: string | null
-  welcome_image: string | null
+  hero_bg_url: string | null
   whatsapp: string | null
   instagram: string | null
 }

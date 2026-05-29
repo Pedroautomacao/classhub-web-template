@@ -29,9 +29,7 @@ export function LandingPage() {
   const welcomeText =
     landing?.welcome_text ??
     'Transforme seu futuro com uma metodologia de ensino inovadora que une tecnologia de ponta e excelência acadêmica. Nossa plataforma oferece um ambiente estruturado para o aprendizado acelerado de idiomas.'
-  // welcome_image hoje guarda a imagem da landing — na Fase 6 será renomeado
-  // para hero_bg_url e a UI do admin atualizada. Aqui consumimos o campo atual.
-  const dynamicBg = landing?.welcome_image ?? null
+  const dynamicBg = landing?.hero_bg_url ?? null
   const whatsapp = landing?.whatsapp ?? null
   const instagram = landing?.instagram ?? null
 

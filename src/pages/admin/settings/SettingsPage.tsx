@@ -19,7 +19,7 @@ import { fileToBase64 } from '@/api/files.api'
 const schema = z.object({
   school_name: z.string().min(1, 'Nome da escola é obrigatório'),
   welcome_text: z.string().optional(),
-  welcome_image: z.string().optional(),
+  hero_bg_url: z.string().optional(),
   semester_start: z.string().optional(),
   semester_end: z.string().optional(),
   whatsapp: z.string().optional(),
@@ -42,7 +42,7 @@ export function SettingsPage() {
     resolver: zodResolver(schema),
   })
 
-  const welcomeImage = watch('welcome_image')
+  const heroBgUrl = watch('hero_bg_url')
   const levelOptions = settings?.level_options ?? []
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function SettingsPage() {
       reset({
         school_name: settings.school_name,
         welcome_text: settings.welcome_text ?? '',
-        welcome_image: settings.welcome_image ?? '',
+        hero_bg_url: settings.hero_bg_url ?? '',
         semester_start: settings.semester_start ?? '',
         semester_end: settings.semester_end ?? '',
         whatsapp: settings.whatsapp ?? '',
@@ -81,7 +81,7 @@ export function SettingsPage() {
     mutation.mutate({
       school_name: values.school_name,
       welcome_text: values.welcome_text || undefined,
-      welcome_image: values.welcome_image || null,
+      hero_bg_url: values.hero_bg_url || null,
       semester_start: values.semester_start || undefined,
       semester_end: values.semester_end || undefined,
       whatsapp: values.whatsapp || undefined,
@@ -106,7 +106,7 @@ export function SettingsPage() {
     if (!file) return
     const base64 = await fileToBase64(file)
     const dataUrl = `data:${file.type};base64,${base64}`
-    setValue('welcome_image', dataUrl, { shouldDirty: true })
+    setValue('hero_bg_url', dataUrl, { shouldDirty: true })
   }
 
   if (isLoading) return <Box><Typography>Carregando...</Typography></Box>
@@ -117,17 +117,17 @@ export function SettingsPage() {
         title="Configurações da Escola"
         subtitle="Gerencie as informações e aparência da escola"
         helpContent={{
-          what: 'A tela de Configurações controla as informações globais da escola exibidas no sistema e nos formulários públicos: nome, texto de boas-vindas, imagem da landing page, datas do semestre, redes sociais e os níveis de idioma disponíveis.',
+          what: 'A tela de Configurações controla as informações globais da escola exibidas no sistema e nos formulários públicos: nome, texto de boas-vindas, imagem de fundo do Hero da landing, datas do semestre, redes sociais e os níveis de idioma disponíveis.',
           actions: [
             'Atualizar o nome oficial da escola (aparece na landing page e nos formulários)',
-            'Personalizar o texto e a imagem de boas-vindas da landing page pública',
+            'Personalizar o texto e a imagem de fundo do Hero da landing page pública',
             'Definir as datas de início e fim do semestre atual',
             'Configurar links de WhatsApp e Instagram exibidos publicamente',
             'Gerenciar os níveis de idioma disponíveis para classificar alunos e turmas',
           ],
           tips: [
             'O nome da escola configurado aqui é exibido em todas as telas do sistema.',
-            'A imagem de boas-vindas aparece na hero section da landing page — use uma imagem de boa qualidade (mínimo 1200px de largura).',
+            'A imagem do Hero aparece como background da seção principal da landing — use imagem de boa qualidade (mínimo 1600px de largura). Sem imagem cadastrada, o Hero exibe o gradiente Lumina como fallback.',
             'Um nível de idioma só pode ser removido se não estiver em uso por nenhum aluno ou turma.',
           ],
           flow: 'Configure aqui antes de lançar o sistema → Revise no início de cada semestre → Qualquer alteração reflete imediatamente nas telas públicas.',
@@ -206,19 +206,22 @@ export function SettingsPage() {
               onChange={handleImageChange}
             />
             <Controller
-              name="welcome_image"
+              name="hero_bg_url"
               control={control}
               render={() => (
                 <Box>
-                  <Typography variant="body2" color="text.secondary" mb={1}>
-                    Imagem de boas-vindas
+                  <Typography variant="body2" color="text.secondary" mb={0.5}>
+                    Imagem de fundo do Hero
                   </Typography>
-                  {welcomeImage ? (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                    Aparece como background da seção principal da landing page. Sem imagem, o Hero usa o gradiente Lumina como fallback. Use imagem de boa qualidade (mínimo 1600px de largura).
+                  </Typography>
+                  {heroBgUrl ? (
                     <Stack spacing={1}>
                       <Box
                         component="img"
-                        src={welcomeImage}
-                        alt="Imagem de boas-vindas"
+                        src={heroBgUrl}
+                        alt="Imagem de fundo do Hero"
                         sx={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
                       />
                       <Stack direction="row" spacing={1}>
@@ -230,7 +233,7 @@ export function SettingsPage() {
                         </Button>
                         <Button
                           size="small" variant="outlined" color="error" startIcon={<Delete />}
-                          onClick={() => setValue('welcome_image', '', { shouldDirty: true })}
+                          onClick={() => setValue('hero_bg_url', '', { shouldDirty: true })}
                         >
                           Remover
                         </Button>
