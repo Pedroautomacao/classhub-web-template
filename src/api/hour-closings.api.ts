@@ -6,6 +6,12 @@ import type {
   HourClosingUpdatePayload,
   HourClosingApprovalPayload,
   HourClosingStatus,
+  HourEntry,
+  HourEntryCreatePayload,
+  HourEntryStatus,
+  HourEntryUpdatePayload,
+  HourEntrySubmissionCreatePayload,
+  HourEntrySubmissionUpdatePayload,
 } from '@/types'
 
 export const hourClosingsApi = {
@@ -41,4 +47,34 @@ export const hourClosingsApi = {
 
   review: (id: string, data: HourClosingApprovalPayload) =>
     api.patch<HourClosing>(`/hour-closings/${id}/review`, data).then((r) => r.data),
+}
+
+// ── /hour-entries — fluxo novo (item 9 Fase B) ──────────────────────────────
+
+export const hourEntriesApi = {
+  create: (data: HourEntryCreatePayload) =>
+    api.post<HourEntry>('/hour-entries/', data).then((r) => r.data),
+
+  listMy: (params?: {
+    status_filter?: HourEntryStatus
+    lesson_date_from?: string
+    lesson_date_to?: string
+  }) =>
+    api.get<HourEntry[]>('/hour-entries/my', { params }).then((r) => r.data),
+
+  update: (id: string, data: HourEntryUpdatePayload) =>
+    api.patch<HourEntry>(`/hour-entries/${id}`, data).then((r) => r.data),
+
+  remove: (id: string) =>
+    api.delete(`/hour-entries/${id}`),
+}
+
+// ── /hour-closing-submissions — agrupar entries em submissão ────────────────
+
+export const hourSubmissionsApi = {
+  create: (data: HourEntrySubmissionCreatePayload) =>
+    api.post<HourClosing>('/hour-closing-submissions/', data).then((r) => r.data),
+
+  update: (id: string, data: HourEntrySubmissionUpdatePayload) =>
+    api.patch<HourClosing>(`/hour-closing-submissions/${id}`, data).then((r) => r.data),
 }

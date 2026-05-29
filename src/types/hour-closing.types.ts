@@ -55,6 +55,7 @@ export interface HourClosingUpdatePayload {
 export interface HourClosingApprovalPayload {
   status: 'approved' | 'rejected'
   final_value?: number
+  reviewer_response?: string | null
 }
 
 export interface AvailableClassForClosing {
@@ -62,4 +63,54 @@ export interface AvailableClassForClosing {
   class_name: string
   start_time: string
   end_time: string
+}
+
+// ── Fluxo novo (item 9 Fase B): rascunhos + submissões agrupadas ────────────
+
+export type HourEntryStatus =
+  | 'draft'
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
+
+export interface HourEntry {
+  id: string
+  teacher_id: string
+  submission_id: string | null
+  class_id: string | null
+  class_name: string
+  lesson_date: string
+  start_time: string
+  end_time: string
+  hourly_rate_snapshot: number
+  status: HourEntryStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface HourEntryCreatePayload {
+  class_id?: string | null
+  class_name: string
+  lesson_date: string
+  start_time: string
+  end_time: string
+}
+
+export interface HourEntryUpdatePayload {
+  class_id?: string | null
+  class_name?: string
+  lesson_date?: string
+  start_time?: string
+  end_time?: string
+}
+
+export interface HourEntrySubmissionCreatePayload {
+  entry_ids: string[]
+  notes?: string | null
+}
+
+export interface HourEntrySubmissionUpdatePayload {
+  entry_ids?: string[]
+  notes?: string | null
 }
