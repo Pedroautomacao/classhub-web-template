@@ -175,22 +175,28 @@ export function TeachersListPage() {
         actionDisabled={!canWrite}
         onAction={tab === 0 ? () => { setSelected(null); setFormOpen(true) } : undefined}
         helpContent={{
-          what: 'A tela de Professores gerencia todo o corpo docente da escola. Cada professor tem seus dados, disponibilidade de horário, taxa horária e histórico de fechamentos.',
+          what: 'A tela de Professores gerencia todo o corpo docente da escola. Cada professor tem seus dados, disponibilidade de horário, taxa horária e histórico de fechamentos. A aba "Fechamentos de Horas" é onde a administração revisa os envios feitos pelos professores no Portal do Professor — cada envio agrupa vários registros individuais de aulas (folha de ponto) e é aprovado ou rejeitado em conjunto.',
           actions: [
             'Cadastrar e editar professores (nome, e-mail, telefone, taxa horária)',
             'Configurar a disponibilidade semanal de cada professor',
             'Clicar na foto do professor para visualizá-la em tamanho ampliado',
             'Iniciar uma conversa pelo WhatsApp clicando no ícone ao lado do telefone',
-            'Visualizar e aprovar ou reprovar fechamentos de horas na aba "Fechamento de Horas"',
+            'Visualizar os envios de horas dos professores na aba "Fechamentos de Horas"',
+            'Expandir um envio para ver os registros individuais de aula que ele agrupa',
+            'Aprovar um envio pendente (o valor final é "congelado" pela soma dos snapshots da taxa horária)',
+            'Rejeitar um envio pendente preenchendo uma justificativa obrigatória — o professor lê essa resposta na aba "Envios" do portal e os registros voltam a ser rascunhos',
+            'Filtrar envios por professor, período e status',
             'Verificar quais professores estão em treinamento',
             'Ordenar a tabela por qualquer coluna clicando no cabeçalho',
           ],
           tips: [
             'A disponibilidade do professor é cruzada com a do aluno ao criar turmas — alertas aparecem em caso de conflito.',
-            'A taxa horária é usada no cálculo automático dos fechamentos de horas submetidos pelo professor.',
+            'A taxa horária é usada para calcular cada novo registro de aula no Portal do Professor — o valor é gravado como snapshot no registro, então reajustar a taxa não altera envios já feitos.',
+            'Para rejeitar um envio é obrigatório informar uma justificativa (reviewer response) — ela aparece para o professor na aba "Envios" do portal.',
+            'Envios aprovados ou rejeitados ficam imutáveis. Para corrigir um envio errado, peça ao professor para cancelar (se ainda pendente) ou refazer com novos registros.',
             'Professores em treinamento são exibidos com uma indicação visual diferente.',
           ],
-          flow: 'Cadastro do Professor → Configuração de Disponibilidade → Vinculação às Turmas → Submissão de Horas pelo Portal → Aprovação pelo Admin.',
+          flow: 'Cadastro do Professor → Configuração de Disponibilidade → Vinculação às Turmas → Professor registra aulas na Folha de ponto e submete um Envio → Admin revisa na aba "Fechamentos de Horas" (aprova ou rejeita com justificativa).',
         }}
       />
 
