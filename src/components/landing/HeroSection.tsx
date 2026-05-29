@@ -12,7 +12,6 @@ interface HeroSectionProps {
    */
   dynamicBg?: string | null
   loading?: boolean
-  onLevelingClick: () => void
 }
 
 export function HeroSection({
@@ -20,7 +19,6 @@ export function HeroSection({
   welcomeText,
   dynamicBg,
   loading,
-  onLevelingClick,
 }: HeroSectionProps) {
   const hasDynamicBg = !!dynamicBg
   const background = hasDynamicBg
@@ -104,8 +102,10 @@ export function HeroSection({
         <Button
           variant="contained"
           size="large"
-          onClick={onLevelingClick}
-          fullWidth={false}
+          component="a"
+          href="/leveling"
+          target="_blank"
+          rel="noopener noreferrer"
           sx={{
             bgcolor: luminaPalette.primary.container,
             color: luminaPalette.primary.onContainer,

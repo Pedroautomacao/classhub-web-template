@@ -43,7 +43,6 @@ export function LandingPage() {
         welcomeText={welcomeText}
         dynamicBg={dynamicBg}
         loading={loadingLanding}
-        onLevelingClick={() => navigate('/leveling')}
       />
       <PlansSection
         plans={plans}
