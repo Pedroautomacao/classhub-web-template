@@ -11,6 +11,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter'
 import { WhatsAppFab } from '@/components/landing/WhatsAppFab'
 import { LoginDialog } from '@/components/auth/LoginDialog'
 import { DemoBanner } from '@/components/common/DemoBanner'
+import { CtaButton } from '@/components/common/CtaButton'
 
 export function LandingPage() {
   const [loginOpen, setLoginOpen] = useState(false)
@@ -52,6 +53,7 @@ export function LandingPage() {
       <MethodologySection />
       <LandingFooter schoolName={schoolName} whatsapp={whatsapp} instagram={instagram} />
       <WhatsAppFab whatsapp={whatsapp} schoolName={schoolName} />
+      <CtaButton />
       <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
     </Box>
   )

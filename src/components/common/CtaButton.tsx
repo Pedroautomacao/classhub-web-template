@@ -21,7 +21,10 @@ export function CtaButton() {
         rel="noopener noreferrer"
         sx={{
           position: 'fixed',
-          bottom: 24,
+          // Em xs/sm/md a landing também mostra o WhatsAppFab da escola (mais
+          // baixo) — empilhamos pra não sobrepor. Em lg+ o WhatsAppFab some
+          // e este volta pra posição padrão.
+          bottom: { xs: 88, lg: 24 },
           right: 24,
           zIndex: 1300,
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)',

@@ -214,7 +214,9 @@ export function SettingsPage() {
                     Imagem de fundo do Hero
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                    Aparece como background da seção principal da landing page. Sem imagem, o Hero usa o gradiente Lumina como fallback. Use imagem de boa qualidade (mínimo 1600px de largura).
+                    Aparece como background da seção principal da landing. Sem imagem, o Hero usa o gradiente Lumina como fallback.
+                    <br />
+                    <strong>Proporção recomendada:</strong> 16:9 horizontal (ex: 1920×1080 ou 2560×1440). Mínimo 1600px de largura para boa qualidade em telas grandes.
                   </Typography>
                   {heroBgUrl ? (
                     <Stack spacing={1}>
