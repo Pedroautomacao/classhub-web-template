@@ -2,8 +2,6 @@ import api from './axios'
 import type {
   AvailableClassForClosing,
   HourClosing,
-  HourClosingCreatePayload,
-  HourClosingUpdatePayload,
   HourClosingApprovalPayload,
   HourClosingStatus,
   HourEntry,
@@ -17,9 +15,6 @@ import type {
 export const hourClosingsApi = {
   getAvailableClasses: (date: string) =>
     api.get<AvailableClassForClosing[]>('/hour-closings/available-classes', { params: { date } }).then((r) => r.data),
-
-  create: (data: HourClosingCreatePayload) =>
-    api.post<HourClosing>('/hour-closings/', data).then((r) => r.data),
 
   listMy: (params?: {
     date_from?: string
@@ -38,9 +33,6 @@ export const hourClosingsApi = {
     sort_by?: string
     sort_order?: 'asc' | 'desc'
   }) => api.get<HourClosing[]>('/hour-closings/admin', { params }).then((r) => r.data),
-
-  update: (id: string, data: HourClosingUpdatePayload) =>
-    api.patch<HourClosing>(`/hour-closings/${id}`, data).then((r) => r.data),
 
   cancel: (id: string) =>
     api.delete(`/hour-closings/${id}`),

@@ -32,26 +32,6 @@ export interface HourClosing {
   updated_at: string
 }
 
-export interface HourClosingEntryPayload {
-  class_id?: string | null
-  class_name: string
-  lesson_date: string
-  start_time: string
-  end_time: string
-}
-
-export interface HourClosingCreatePayload {
-  date_from: string
-  date_to: string
-  notes?: string | null
-  entries: HourClosingEntryPayload[]
-}
-
-export interface HourClosingUpdatePayload {
-  final_value?: number
-  notes?: string | null
-}
-
 export interface HourClosingApprovalPayload {
   status: 'approved' | 'rejected'
   final_value?: number
