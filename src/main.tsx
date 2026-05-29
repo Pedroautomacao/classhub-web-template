@@ -11,7 +11,12 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 1000 * 60 * 5,
+      // staleTime: 0 (default) → todo remount de componente refaz fetch.
+      // Isso garante que ao trocar de menu ou de sub-tab os dados são
+      // sempre frescos. Queries específicas podem sobrescrever via opção
+      // staleTime quando quisermos manter cache (ex: lookups que mudam pouco).
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
     },
   },
 })
