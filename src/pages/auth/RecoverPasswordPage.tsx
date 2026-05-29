@@ -18,7 +18,9 @@ import { AuthShell } from '@/components/auth/AuthShell'
 import { authService } from '@/services/auth.service'
 
 const schema = z.object({
-  identifier: z.string().min(1, 'Informe e-mail ou usuário'),
+  // .trim() remove espaços em volta antes de qualquer validação — evita
+  // confusão de "usuário com espaço" gerando 404 silencioso no backend.
+  identifier: z.string().trim().min(1, 'Informe e-mail ou usuário'),
 })
 type FormValues = z.infer<typeof schema>
 

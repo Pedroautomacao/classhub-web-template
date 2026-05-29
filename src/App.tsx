@@ -11,11 +11,18 @@ function App() {
     staleTime: Infinity,
   })
 
+  // Sincroniza <title> e <meta name="description"> com as configurações da
+  // escola — importante pra SEO e pra abas/preview compartilhadas.
   useEffect(() => {
-    if (data?.school_name) {
+    if (!data) return
+    if (data.school_name) {
       document.title = data.school_name
     }
-  }, [data?.school_name])
+    if (data.welcome_text) {
+      const meta = document.querySelector('meta[name="description"]')
+      if (meta) meta.setAttribute('content', data.welcome_text)
+    }
+  }, [data])
 
   return <RouterProvider router={router} />
 }
