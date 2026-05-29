@@ -21,6 +21,7 @@ interface LandingNavbarProps {
 
 const NAV_LINKS = [
   { label: 'Metodologia', href: '#metodologia' },
+  { label: 'Planos', href: '#planos' },
   { label: 'Contato', href: '#contato' },
 ]
 
