@@ -35,7 +35,8 @@ export function HeroSection({
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        py: { xs: 12, md: 16 },
+        py: { xs: 8, md: 16 },
+        px: { xs: 2, md: 0 },
         textAlign: 'center',
         background,
         backgroundSize: 'cover',
@@ -77,22 +78,22 @@ export function HeroSection({
               sx={{
                 fontFamily: '"Hanken Grotesk", sans-serif',
                 fontWeight: 800,
-                fontSize: { xs: '2.5rem', md: '4rem' },
-                lineHeight: 1.05,
+                fontSize: { xs: '2rem', sm: '2.5rem', md: '4rem' },
+                lineHeight: { xs: 1.15, md: 1.05 },
                 letterSpacing: '-0.02em',
                 color: luminaPalette.primary.container,
-                mb: 3,
+                mb: { xs: 2, md: 3 },
               }}
             >
               {schoolName}
             </Typography>
             <Typography
               sx={{
-                fontSize: { xs: '1.05rem', md: '1.25rem' },
+                fontSize: { xs: '1rem', md: '1.25rem' },
                 color: 'rgba(244, 254, 255, 0.8)',
                 maxWidth: 720,
                 mx: 'auto',
-                mb: 5,
+                mb: { xs: 4, md: 5 },
                 lineHeight: 1.6,
               }}
             >
@@ -104,13 +105,15 @@ export function HeroSection({
           variant="contained"
           size="large"
           onClick={onLevelingClick}
+          fullWidth={false}
           sx={{
             bgcolor: luminaPalette.primary.container,
             color: luminaPalette.primary.onContainer,
             fontWeight: 700,
-            fontSize: 16,
-            px: 5,
-            py: 1.75,
+            fontSize: { xs: 14, md: 16 },
+            px: { xs: 4, md: 5 },
+            py: { xs: 1.5, md: 1.75 },
+            width: { xs: '100%', sm: 'auto' },
             borderRadius: 2,
             boxShadow: '0px 8px 24px rgba(0,0,0,0.18)',
             '&:hover': {

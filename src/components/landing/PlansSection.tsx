@@ -69,7 +69,7 @@ function PlanCard({
       }}
     >
       <Box sx={{ height: 6, width: '100%', bgcolor: accent }} />
-      <Stack spacing={3} sx={{ p: 4, flexGrow: 1 }}>
+      <Stack spacing={3} sx={{ p: { xs: 3, md: 4 }, flexGrow: 1 }}>
         <Typography
           sx={{
             fontFamily: '"Hanken Grotesk", sans-serif',
@@ -109,7 +109,7 @@ function PlanCard({
         </Typography>
       </Stack>
 
-      <Box sx={{ px: 4, pb: 4 }}>
+      <Box sx={{ px: { xs: 3, md: 4 }, pb: { xs: 3, md: 4 } }}>
         <Button
           fullWidth
           variant="contained"
@@ -122,7 +122,7 @@ function PlanCard({
           disabled={!whatsapp}
           sx={{
             borderRadius: 2,
-            py: 1.75,
+            py: { xs: 1.5, md: 1.75 },
             fontWeight: 700,
             fontSize: 15,
           }}
@@ -148,21 +148,21 @@ function PlansSkeleton() {
 
 export function PlansSection({ plans, loading, whatsapp, schoolName }: PlansSectionProps) {
   return (
-    <Box component="section" id="planos" sx={{ py: { xs: 10, md: 14 } }}>
-      <Container maxWidth="lg">
-        <Stack spacing={2} alignItems="center" sx={{ mb: 8, textAlign: 'center' }}>
+    <Box component="section" id="planos" sx={{ py: { xs: 8, md: 14 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
+        <Stack spacing={2} alignItems="center" sx={{ mb: { xs: 6, md: 8 }, textAlign: 'center' }}>
           <Typography
             component="h2"
             sx={{
               fontFamily: '"Hanken Grotesk", sans-serif',
               fontWeight: 700,
-              fontSize: { xs: '2rem', md: '3rem' },
+              fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
             }}
           >
             Nossos Planos
           </Typography>
           <Box sx={{ height: 6, width: 96, bgcolor: luminaPalette.tertiary.main, borderRadius: 999 }} />
-          <Typography sx={{ fontSize: 18, color: 'text.secondary', maxWidth: 600 }}>
+          <Typography sx={{ fontSize: { xs: 16, md: 18 }, color: 'text.secondary', maxWidth: 600 }}>
             Escolha o investimento ideal para a sua jornada de fluência.
           </Typography>
         </Stack>

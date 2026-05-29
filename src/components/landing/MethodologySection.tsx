@@ -45,39 +45,39 @@ export function MethodologySection() {
     <Box
       component="section"
       id="metodologia"
-      sx={{ bgcolor: luminaPalette.neutral.surfaceContainer, py: { xs: 10, md: 14 } }}
+      sx={{ bgcolor: luminaPalette.neutral.surfaceContainer, py: { xs: 8, md: 14 } }}
     >
-      <Container maxWidth="lg">
-        <Stack spacing={2} alignItems="center" sx={{ mb: 8, textAlign: 'center' }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
+        <Stack spacing={2} alignItems="center" sx={{ mb: { xs: 6, md: 8 }, textAlign: 'center' }}>
           <Typography
             component="h2"
             sx={{
               fontFamily: '"Hanken Grotesk", sans-serif',
               fontWeight: 700,
-              fontSize: { xs: '2rem', md: '3rem' },
+              fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
             }}
           >
             Nossa Metodologia
           </Typography>
           <Box sx={{ height: 6, width: 96, bgcolor: luminaPalette.primary.main, borderRadius: 999 }} />
-          <Typography sx={{ fontSize: 18, color: 'text.secondary', maxWidth: 600 }}>
+          <Typography sx={{ fontSize: { xs: 16, md: 18 }, color: 'text.secondary', maxWidth: 600 }}>
             Um caminho estruturado para o seu sucesso acadêmico.
           </Typography>
         </Stack>
 
-        <Grid container spacing={4}>
+        <Grid container spacing={{ xs: 3, md: 4 }}>
           {METHODS.map((method) => (
             <Grid key={method.title} size={{ xs: 12, md: 4 }}>
               <Stack
-                spacing={3}
-                alignItems="center"
+                spacing={{ xs: 2, md: 3 }}
+                alignItems={{ xs: 'flex-start', md: 'center' }}
                 sx={{
                   bgcolor: luminaPalette.neutral.surface,
-                  p: 5,
-                  borderRadius: 6,
+                  p: { xs: 3, md: 5 },
+                  borderRadius: { xs: 4, md: 6 },
                   border: '1px solid',
                   borderColor: 'divider',
-                  textAlign: 'center',
+                  textAlign: { xs: 'left', md: 'center' },
                   height: '100%',
                   boxShadow: luminaShadows.card,
                   transition: 'box-shadow 300ms ease, transform 300ms ease',
@@ -89,14 +89,15 @@ export function MethodologySection() {
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: { xs: 56, md: 80 },
+                    height: { xs: 56, md: 80 },
                     borderRadius: 3,
                     bgcolor: method.accentBg,
                     color: method.accent,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    '& svg': { fontSize: { xs: 28, md: 40 } },
                   }}
                 >
                   {method.icon}
@@ -105,12 +106,12 @@ export function MethodologySection() {
                   sx={{
                     fontFamily: '"Hanken Grotesk", sans-serif',
                     fontWeight: 700,
-                    fontSize: 22,
+                    fontSize: { xs: 20, md: 22 },
                   }}
                 >
                   {method.title}
                 </Typography>
-                <Typography sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+                <Typography sx={{ color: 'text.secondary', lineHeight: 1.6, fontSize: { xs: 15, md: 16 } }}>
                   {method.description}
                 </Typography>
               </Stack>

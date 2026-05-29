@@ -14,7 +14,7 @@ export function LandingFooter({ schoolName, whatsapp, instagram }: LandingFooter
 
   return (
     <Box component="footer" sx={{ bgcolor: luminaPalette.neutral.surfaceHighest }}>
-      <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 }, px: { xs: 2, md: 3 } }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           alignItems="center"

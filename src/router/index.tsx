@@ -38,10 +38,12 @@ function Lazy({ children }: { children: React.ReactNode }) {
 }
 
 export const router = createBrowserRouter([
+  // Landing standalone — não usa PublicLayout (que tem AppBar próprio); a
+  // LandingPage traz sua própria navbar + footer + DemoBanner integrados.
+  { path: '/', element: <Lazy><LandingPage /></Lazy> },
   {
     element: <PublicLayout />,
     children: [
-      { path: '/', element: <Lazy><LandingPage /></Lazy> },
       { path: '/leveling', element: <Lazy><LevelingFormPage /></Lazy> },
       { path: '/enrollment', element: <Lazy><EnrollmentFormPage /></Lazy> },
       { path: '/re-enrollment', element: <Lazy><ReEnrollmentFormPage /></Lazy> },

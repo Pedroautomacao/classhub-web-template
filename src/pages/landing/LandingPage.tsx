@@ -8,6 +8,8 @@ import { HeroSection } from '@/components/landing/HeroSection'
 import { PlansSection } from '@/components/landing/PlansSection'
 import { MethodologySection } from '@/components/landing/MethodologySection'
 import { LandingFooter } from '@/components/landing/LandingFooter'
+import { WhatsAppFab } from '@/components/landing/WhatsAppFab'
+import { DemoBanner } from '@/components/common/DemoBanner'
 
 export function LandingPage() {
   const navigate = useNavigate()
@@ -34,6 +36,7 @@ export function LandingPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default' }}>
+      <DemoBanner />
       <LandingNavbar schoolName={schoolName} onLoginClick={() => navigate('/login')} />
       <HeroSection
         schoolName={schoolName}
@@ -50,6 +53,7 @@ export function LandingPage() {
       />
       <MethodologySection />
       <LandingFooter schoolName={schoolName} whatsapp={whatsapp} instagram={instagram} />
+      <WhatsAppFab whatsapp={whatsapp} schoolName={schoolName} />
     </Box>
   )
 }
