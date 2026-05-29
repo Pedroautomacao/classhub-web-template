@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material'
 import { AdminPanelSettings, School } from '@mui/icons-material'
-import { LoginModal } from '@/components/common/LoginModal'
+import { LoginDialog } from '@/components/auth/LoginDialog'
 import { DemoBanner } from '@/components/common/DemoBanner'
 import { CtaButton } from '@/components/common/CtaButton'
 
@@ -31,7 +31,7 @@ export function PublicLayout() {
 
       <Outlet />
 
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
       <CtaButton />
     </Box>
   )

@@ -1,5 +1,5 @@
+import { useState } from 'react'
 import { Box } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { settingsApi } from '@/api/settings.api'
 import { plansApi } from '@/api/plans.api'
@@ -9,10 +9,11 @@ import { PlansSection } from '@/components/landing/PlansSection'
 import { MethodologySection } from '@/components/landing/MethodologySection'
 import { LandingFooter } from '@/components/landing/LandingFooter'
 import { WhatsAppFab } from '@/components/landing/WhatsAppFab'
+import { LoginDialog } from '@/components/auth/LoginDialog'
 import { DemoBanner } from '@/components/common/DemoBanner'
 
 export function LandingPage() {
-  const navigate = useNavigate()
+  const [loginOpen, setLoginOpen] = useState(false)
 
   const { data: landing, isLoading: loadingLanding } = useQuery({
     queryKey: ['landing'],
@@ -37,7 +38,7 @@ export function LandingPage() {
   return (
     <Box sx={{ bgcolor: 'background.default' }}>
       <DemoBanner />
-      <LandingNavbar schoolName={schoolName} onLoginClick={() => navigate('/login')} />
+      <LandingNavbar schoolName={schoolName} onLoginClick={() => setLoginOpen(true)} />
       <HeroSection
         schoolName={schoolName}
         welcomeText={welcomeText}
@@ -53,6 +54,7 @@ export function LandingPage() {
       <MethodologySection />
       <LandingFooter schoolName={schoolName} whatsapp={whatsapp} instagram={instagram} />
       <WhatsAppFab whatsapp={whatsapp} schoolName={schoolName} />
+      <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
     </Box>
   )
 }
