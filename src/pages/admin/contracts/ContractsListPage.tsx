@@ -240,51 +240,75 @@ export function ContractsListPage() {
         }}
       />
 
-      <Stack spacing={1.5} mb={2}>
-        {/* Linha 1 — status + atalho de vencimento */}
-        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap alignItems="center">
-          <ToggleButtonGroup
-            size="small" exclusive
-            value={statusFilter ?? 'all'}
-            onChange={(_, v) => {
-              if (v !== null) {
-                setStatusFilter(v === 'all' ? undefined : v)
-                setExpiringSoonFilter(false)
-              }
-            }}
-          >
-            <ToggleButton value="all">Todos</ToggleButton>
-            <ToggleButton value="active">Ativos</ToggleButton>
-            <ToggleButton value="expired">Expirados</ToggleButton>
-            <ToggleButton value="cancelled">Cancelados</ToggleButton>
-          </ToggleButtonGroup>
+      <Stack direction="row" spacing={1.5} mb={2} flexWrap="wrap" useFlexGap alignItems="center">
+        <ToggleButtonGroup
+          size="small" exclusive
+          value={statusFilter ?? 'all'}
+          onChange={(_, v) => {
+            if (v !== null) {
+              setStatusFilter(v === 'all' ? undefined : v)
+              setExpiringSoonFilter(false)
+            }
+          }}
+        >
+          <ToggleButton value="all">Todos</ToggleButton>
+          <ToggleButton value="active">Ativos</ToggleButton>
+          <ToggleButton value="expired">Expirados</ToggleButton>
+          <ToggleButton value="cancelled">Cancelados</ToggleButton>
+        </ToggleButtonGroup>
 
-          <ToggleButtonGroup
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            Vencimento
+          </Typography>
+          <DatePickerField
+            label="De"
             size="small"
-            exclusive
-            value={expiringSoonFilter ? 'expiring' : ''}
-            onChange={(_, v) => {
-              const on = v === 'expiring'
-              setExpiringSoonFilter(on)
-              if (on) {
-                setStatusFilter('active')
-                setDueDateFrom('')
-                setDueDateTo('')
-              }
-            }}
-          >
-            <ToggleButton value="expiring" color="warning">Vencendo em 30 dias</ToggleButton>
-          </ToggleButtonGroup>
+            value={dueDateFrom || null}
+            maxDate={dueDateTo || undefined}
+            onChange={(v) => { setDueDateFrom(v ?? ''); if (v) setExpiringSoonFilter(false) }}
+            sx={{ width: 190 }}
+          />
+          <DatePickerField
+            label="Até"
+            size="small"
+            value={dueDateTo || null}
+            minDate={dueDateFrom || undefined}
+            onChange={(v) => { setDueDateTo(v ?? ''); if (v) setExpiringSoonFilter(false) }}
+            sx={{ width: 190 }}
+          />
         </Stack>
 
-        {/* Linha 2 — busca + range de vencimento */}
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} useFlexGap alignItems={{ md: 'center' }}>
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={expiringSoonFilter ? 'expiring' : ''}
+          onChange={(_, v) => {
+            const on = v === 'expiring'
+            setExpiringSoonFilter(on)
+            if (on) {
+              setStatusFilter('active')
+              setDueDateFrom('')
+              setDueDateTo('')
+            }
+          }}
+        >
+          <ToggleButton value="expiring" color="warning">Vencendo em 30 dias</ToggleButton>
+        </ToggleButtonGroup>
+      </Stack>
+
+      <DataTable
+        columns={columns}
+        rows={contracts}
+        loading={isLoading}
+        emptyMessage="Nenhum contrato encontrado."
+        toolbar={
           <TextField
             size="small"
             placeholder="Buscar por nome ou CPF..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            sx={{ flex: 1, minWidth: { xs: '100%', md: 280 } }}
+            sx={{ width: { xs: '100%', sm: 320 } }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -297,36 +321,7 @@ export function ContractsListPage() {
               },
             }}
           />
-
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-              Vencimento
-            </Typography>
-            <DatePickerField
-              label="De"
-              size="small"
-              value={dueDateFrom || null}
-              maxDate={dueDateTo || undefined}
-              onChange={(v) => { setDueDateFrom(v ?? ''); if (v) setExpiringSoonFilter(false) }}
-              sx={{ width: 150 }}
-            />
-            <DatePickerField
-              label="Até"
-              size="small"
-              value={dueDateTo || null}
-              minDate={dueDateFrom || undefined}
-              onChange={(v) => { setDueDateTo(v ?? ''); if (v) setExpiringSoonFilter(false) }}
-              sx={{ width: 150 }}
-            />
-          </Stack>
-        </Stack>
-      </Stack>
-
-      <DataTable
-        columns={columns}
-        rows={contracts}
-        loading={isLoading}
-        emptyMessage="Nenhum contrato encontrado."
+        }
         onExport={handleExport}
         isExporting={isExporting}
         sortableColumns={['start_date', 'end_date', 'status', 'created_at']}

@@ -33,6 +33,7 @@ interface DataTableProps<T extends { id: string }> {
   loading?: boolean
   emptyMessage?: string
   skeletonRows?: number
+  toolbar?: ReactNode
   page?: number
   pageCount?: number
   onPageChange?: (page: number) => void
@@ -50,6 +51,7 @@ export function DataTable<T extends { id: string }>({
   loading = false,
   emptyMessage = 'Nenhum registro encontrado.',
   skeletonRows = 5,
+  toolbar,
   page,
   pageCount,
   onPageChange,
@@ -70,17 +72,20 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <Box>
-      {onExport && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={isExporting ? <CircularProgress size={14} color="inherit" /> : <FileDownload />}
-            onClick={onExport}
-            disabled={isExporting}
-          >
-            Exportar Excel
-          </Button>
+      {(toolbar || onExport) && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>{toolbar}</Box>
+          {onExport && (
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={isExporting ? <CircularProgress size={14} color="inherit" /> : <FileDownload />}
+              onClick={onExport}
+              disabled={isExporting}
+            >
+              Exportar Excel
+            </Button>
+          )}
         </Box>
       )}
       <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
