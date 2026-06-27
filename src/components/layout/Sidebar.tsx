@@ -22,8 +22,8 @@ import {
   Settings,
   Link as LinkIcon,
   AccountCircle,
-  LibraryBooks,
   Payments,
+  Insights,
 } from '@mui/icons-material'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
@@ -49,7 +49,7 @@ const navItems: NavItem[] = [
   { label: 'Professores', icon: <School />, path: '/admin/teachers', permission: Permission.TEACHERS_READ },
   { label: 'Planos', icon: <CardMembership />, path: '/admin/plans', permission: Permission.PLANS_READ },
   { label: 'Nivelamento', icon: <Assignment />, path: '/admin/leveling', permission: Permission.LEVELING_READ },
-  { label: 'Templates de Nivelamento', icon: <LibraryBooks />, path: '/admin/leveling-templates', permission: Permission.LEVELING_READ },
+  { label: 'NPS', icon: <Insights />, path: '/admin/nps', permission: Permission.NPS_READ },
   { label: 'Portal do Professor', icon: <AccountCircle />, path: '/admin/teacher-portal', permission: Permission.HOUR_CLOSINGS_READ },
   { label: 'Links', icon: <LinkIcon />, path: '/admin/links', permission: Permission.ENROLLMENT_WRITE },
 ]

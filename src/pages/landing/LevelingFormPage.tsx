@@ -186,7 +186,7 @@ export function LevelingFormPage() {
       })
       setSubmitted(true)
     } catch {
-      setSubmitError('Ocorreu um erro ao enviar o formulário. Tente novamente.')
+      setSubmitError('Ocorreu um erro ao enviar o nivelamento. Tente novamente.')
     }
   }
 
@@ -196,7 +196,7 @@ export function LevelingFormPage() {
         <Paper sx={{ p: 6, textAlign: 'center', maxWidth: 480 }}>
           <CheckCircle color="success" sx={{ fontSize: 72, mb: 2 }} />
           <Typography variant="h5" fontWeight={700} gutterBottom>
-            Formulário enviado!
+            Nivelamento enviado!
           </Typography>
           <Typography color="text.secondary">
             Recebemos suas informações. Nossa equipe entrará em contato em breve
@@ -218,7 +218,7 @@ export function LevelingFormPage() {
             </Typography>
           )}
           <Typography variant="h4" fontWeight={700} textAlign="center" color="primary">
-            Formulário de Nivelamento
+            Nivelamento
           </Typography>
           <Typography color="text.secondary" textAlign="center" mt={1}>
             Preencha os dados abaixo e nossa equipe entrará em contato para
@@ -336,7 +336,7 @@ export function LevelingFormPage() {
               disabled={isSubmitting}
               startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : null}
             >
-              {isSubmitting ? 'Enviando...' : 'Enviar Formulário'}
+              {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
             </Button>
           </Stack>
         </Paper>

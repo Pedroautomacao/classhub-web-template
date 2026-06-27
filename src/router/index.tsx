@@ -19,14 +19,15 @@ const ClassesListPage = lazy(() => import('@/pages/admin/classes/ClassesListPage
 const ContractsListPage = lazy(() => import('@/pages/admin/contracts/ContractsListPage').then((m) => ({ default: m.ContractsListPage })))
 const PaymentsListPage = lazy(() => import('@/pages/admin/payments/PaymentsListPage').then((m) => ({ default: m.PaymentsListPage })))
 const PlansListPage = lazy(() => import('@/pages/admin/plans/PlansListPage').then((m) => ({ default: m.PlansListPage })))
-const LevelingListPage = lazy(() => import('@/pages/admin/leveling/LevelingListPage').then((m) => ({ default: m.LevelingListPage })))
+const LevelingPage = lazy(() => import('@/pages/admin/leveling/LevelingPage').then((m) => ({ default: m.LevelingPage })))
 const EnrollmentPage = lazy(() => import('@/pages/admin/enrollment/EnrollmentPage').then((m) => ({ default: m.EnrollmentPage })))
 const ReEnrollmentPage = lazy(() => import('@/pages/admin/enrollment/ReEnrollmentPage').then((m) => ({ default: m.ReEnrollmentPage })))
 const UsersListPage = lazy(() => import('@/pages/admin/users/UsersListPage').then((m) => ({ default: m.UsersListPage })))
 const SettingsPage = lazy(() => import('@/pages/admin/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const ShareableLinksPage = lazy(() => import('@/pages/admin/links/ShareableLinksPage').then((m) => ({ default: m.ShareableLinksPage })))
 const TeacherPortalPage = lazy(() => import('@/pages/admin/teacher-portal/TeacherPortalPage').then((m) => ({ default: m.TeacherPortalPage })))
-const LevelingTemplatesPage = lazy(() => import('@/pages/admin/leveling-templates/LevelingTemplatesPage').then((m) => ({ default: m.LevelingTemplatesPage })))
+const NpsPage = lazy(() => import('@/pages/admin/nps/NpsPage').then((m) => ({ default: m.NpsPage })))
+const NpsFormPage = lazy(() => import('@/pages/landing/NpsFormPage').then((m) => ({ default: m.NpsFormPage })))
 
 function PageLoader() {
   return (
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
       { path: '/leveling', element: <Lazy><LevelingFormPage /></Lazy> },
       { path: '/enrollment', element: <Lazy><EnrollmentFormPage /></Lazy> },
       { path: '/re-enrollment', element: <Lazy><ReEnrollmentFormPage /></Lazy> },
+      { path: '/nps', element: <Lazy><NpsFormPage /></Lazy> },
     ],
   },
   {
@@ -71,14 +73,14 @@ export const router = createBrowserRouter([
           { path: '/admin/contracts', element: <Lazy><ContractsListPage /></Lazy> },
           { path: '/admin/payments', element: <Lazy><PaymentsListPage /></Lazy> },
           { path: '/admin/plans', element: <Lazy><PlansListPage /></Lazy> },
-          { path: '/admin/leveling', element: <Lazy><LevelingListPage /></Lazy> },
+          { path: '/admin/leveling', element: <Lazy><LevelingPage /></Lazy> },
+          { path: '/admin/nps', element: <Lazy><NpsPage /></Lazy> },
           { path: '/admin/enrollment', element: <Lazy><EnrollmentPage /></Lazy> },
           { path: '/admin/re-enrollment', element: <Lazy><ReEnrollmentPage /></Lazy> },
           { path: '/admin/users', element: <Lazy><UsersListPage /></Lazy> },
           { path: '/admin/settings', element: <Lazy><SettingsPage /></Lazy> },
           { path: '/admin/links', element: <Lazy><ShareableLinksPage /></Lazy> },
           { path: '/admin/teacher-portal', element: <Lazy><TeacherPortalPage /></Lazy> },
-          { path: '/admin/leveling-templates', element: <Lazy><LevelingTemplatesPage /></Lazy> },
         ],
       },
     ],

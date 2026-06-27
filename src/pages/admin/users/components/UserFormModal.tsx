@@ -20,6 +20,7 @@ const PERMISSION_GROUPS = [
   { label: 'Turmas', permissions: [Permission.CLASSES_READ, Permission.CLASSES_WRITE, Permission.CLASSES_DELETE] },
   { label: 'Planos', permissions: [Permission.PLANS_READ, Permission.PLANS_WRITE, Permission.PLANS_DELETE] },
   { label: 'Nivelamento & Templates', permissions: [Permission.LEVELING_READ, Permission.LEVELING_WRITE, Permission.LEVELING_DELETE] },
+  { label: 'NPS', permissions: [Permission.NPS_READ, Permission.NPS_WRITE, Permission.NPS_DELETE] },
   { label: 'Fechamento de Horas', permissions: [Permission.HOUR_CLOSINGS_READ, Permission.HOUR_CLOSINGS_WRITE, Permission.HOUR_CLOSINGS_APPROVE] },
   { label: 'Pagamentos', permissions: [Permission.PAYMENTS_READ, Permission.PAYMENTS_WRITE] },
   { label: 'Matrícula', permissions: [Permission.ENROLLMENT_WRITE] },

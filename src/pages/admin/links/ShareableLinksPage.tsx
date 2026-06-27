@@ -21,6 +21,11 @@ const LINKS = [
     description: 'Envie para candidatos que querem fazer o nivelamento gratuito.',
     path: '/leveling',
   },
+  {
+    label: 'Pesquisa de NPS',
+    description: 'Pesquisa de satisfação anônima — envie para os alunos responderem.',
+    path: '/nps',
+  },
 ]
 
 export function ShareableLinksPage() {

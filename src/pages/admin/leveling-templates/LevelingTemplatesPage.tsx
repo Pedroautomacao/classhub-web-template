@@ -466,7 +466,7 @@ export function LevelingTemplatesPage() {
         actionLabel={canWrite ? 'Novo Template' : undefined}
         onAction={canWrite ? handleNewTemplate : undefined}
         helpContent={{
-          what: 'Esta tela permite criar e gerenciar o formulário de nivelamento que os candidatos preenchem publicamente. O template define as perguntas, tipos de resposta e ordem exibida no formulário.',
+          what: 'Esta é a aba "Templates" da tela de Nivelamento. Aqui você cria e gerencia o formulário que os candidatos preenchem publicamente — o template define as perguntas, tipos de resposta e a ordem exibida. As respostas ficam na aba "Respostas".',
           actions: [
             'Criar templates com perguntas de texto, escolha única ou múltipla escolha',
             'Reordenar, editar e remover perguntas',

@@ -123,7 +123,7 @@ export function ReEnrollmentFormPage() {
       })
       setSubmitted(true)
     } catch {
-      setSubmitError('Ocorreu um erro ao enviar o formulário. Tente novamente.')
+      setSubmitError('Ocorreu um erro ao enviar a rematrícula. Tente novamente.')
     }
   }
 
@@ -154,7 +154,7 @@ export function ReEnrollmentFormPage() {
             </Typography>
           )}
           <Typography variant="h4" fontWeight={700} textAlign="center" color="primary">
-            Formulário de Rematrícula
+            Rematrícula
           </Typography>
           <Typography color="text.secondary" textAlign="center" mt={1}>
             Informe seu CPF para renovar sua matrícula.

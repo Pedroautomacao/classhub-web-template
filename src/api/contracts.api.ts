@@ -7,6 +7,8 @@ export const contractsApi = {
     contract_status?: ContractStatus
     search?: string
     expiring_soon?: boolean
+    end_date_from?: string
+    end_date_to?: string
     sort_by?: string
     sort_order?: 'asc' | 'desc'
   }) =>

@@ -13,6 +13,7 @@ import dayjs from 'dayjs'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { DatePickerField } from '@/components/common/DatePickerField'
 import { contractsApi } from '@/api/contracts.api'
 import { filesApi, fileToBase64, downloadBase64File } from '@/api/files.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -50,6 +51,8 @@ export function ContractsListPage() {
   const initialExpiringSoon = (location.state as any)?.expiring_soon as boolean | undefined
   const [statusFilter, setStatusFilter] = useState<ContractStatus | undefined>(initialStatus)
   const [expiringSoonFilter, setExpiringSoonFilter] = useState(initialExpiringSoon ?? false)
+  const [dueDateFrom, setDueDateFrom] = useState('')
+  const [dueDateTo, setDueDateTo] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
 
@@ -64,11 +67,18 @@ export function ContractsListPage() {
   const [fileContract, setFileContract] = useState<Contract | null>(null)
   const [deleteFileTarget, setDeleteFileTarget] = useState<FileMetadata | null>(null)
 
+  const filterParams = {
+    ...(statusFilter ? { contract_status: statusFilter } : {}),
+    ...(expiringSoonFilter ? { expiring_soon: true } : {}),
+    ...(dueDateFrom ? { end_date_from: dueDateFrom } : {}),
+    ...(dueDateTo ? { end_date_to: dueDateTo } : {}),
+    ...(search ? { search } : {}),
+  }
+
   const { data: contracts = [], isLoading, isFetching } = useQuery({
-    queryKey: ['contracts', statusFilter, expiringSoonFilter, search, sortBy, sortOrder],
+    queryKey: ['contracts', statusFilter, expiringSoonFilter, dueDateFrom, dueDateTo, search, sortBy, sortOrder],
     queryFn: () => contractsApi.list({
-      ...(expiringSoonFilter ? { expiring_soon: true } : statusFilter ? { contract_status: statusFilter } : {}),
-      ...(search ? { search } : {}),
+      ...filterParams,
       sort_by: sortBy,
       sort_order: sortOrder,
     }),
@@ -144,8 +154,7 @@ export function ContractsListPage() {
     setIsExporting(true)
     try {
       const rows = await contractsApi.list({
-        ...(expiringSoonFilter ? { expiring_soon: true } : statusFilter ? { contract_status: statusFilter } : {}),
-        ...(search ? { search } : {}),
+        ...filterParams,
       })
       exportToXlsx(rows, [
         { label: 'Aluno', value: (c) => c.student?.full_name ?? '' },
@@ -215,11 +224,14 @@ export function ContractsListPage() {
           what: 'A tela de Contratos registra todos os acordos firmados entre a escola e os alunos. Cada contrato vincula um aluno a um plano, com datas de início e fim, período de carência e status atualizado.',
           actions: [
             'Visualizar todos os contratos com status (ativo, expirado, cancelado)',
-            'Filtrar por status para encontrar contratos próximos do vencimento',
+            'Filtrar por status (ativo/expirado/cancelado), combinável com um intervalo de data de vencimento (campos "De"/"Até")',
+            'Usar o atalho "Vencendo em 30 dias" para ver contratos próximos do vencimento',
             'Cancelar contratos manualmente quando necessário',
             'Acessar o PDF do contrato assinado quando disponível',
           ],
           tips: [
+            'O filtro por intervalo de vencimento combina com o status — ex.: "Ativos que vencem entre 01/07 e 31/07".',
+            'O atalho "Vencendo em 30 dias" e o intervalo de datas são mutuamente exclusivos — usar um limpa o outro.',
             'Contratos expirados aparecem em destaque — use para identificar alunos que precisam renovar.',
             'O período de carência permite que o aluno continue ativo por alguns dias após o vencimento.',
             'Contratos são criados automaticamente no fluxo de Matrícula e Rematrícula.',
@@ -228,54 +240,86 @@ export function ContractsListPage() {
         }}
       />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2} alignItems={{ sm: 'center' }} flexWrap="wrap">
-        <ToggleButtonGroup
-          size="small" exclusive
-          value={statusFilter ?? 'all'}
-          onChange={(_, v) => {
-            if (v !== null) {
-              setStatusFilter(v === 'all' ? undefined : v)
-              setExpiringSoonFilter(false)
-            }
-          }}
-        >
-          <ToggleButton value="all">Todos</ToggleButton>
-          <ToggleButton value="active">Ativos</ToggleButton>
-          <ToggleButton value="expired">Expirados</ToggleButton>
-          <ToggleButton value="cancelled">Cancelados</ToggleButton>
-        </ToggleButtonGroup>
+      <Stack spacing={1.5} mb={2}>
+        {/* Linha 1 — status + atalho de vencimento */}
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap alignItems="center">
+          <ToggleButtonGroup
+            size="small" exclusive
+            value={statusFilter ?? 'all'}
+            onChange={(_, v) => {
+              if (v !== null) {
+                setStatusFilter(v === 'all' ? undefined : v)
+                setExpiringSoonFilter(false)
+              }
+            }}
+          >
+            <ToggleButton value="all">Todos</ToggleButton>
+            <ToggleButton value="active">Ativos</ToggleButton>
+            <ToggleButton value="expired">Expirados</ToggleButton>
+            <ToggleButton value="cancelled">Cancelados</ToggleButton>
+          </ToggleButtonGroup>
 
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={expiringSoonFilter ? 'expiring' : ''}
-          onChange={(_, v) => {
-            const on = v === 'expiring'
-            setExpiringSoonFilter(on)
-            if (on) setStatusFilter('active')
-          }}
-        >
-          <ToggleButton value="expiring" color="warning">Vencendo em 30 dias</ToggleButton>
-        </ToggleButtonGroup>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={expiringSoonFilter ? 'expiring' : ''}
+            onChange={(_, v) => {
+              const on = v === 'expiring'
+              setExpiringSoonFilter(on)
+              if (on) {
+                setStatusFilter('active')
+                setDueDateFrom('')
+                setDueDateTo('')
+              }
+            }}
+          >
+            <ToggleButton value="expiring" color="warning">Vencendo em 30 dias</ToggleButton>
+          </ToggleButtonGroup>
+        </Stack>
 
-        <TextField
-          size="small"
-          placeholder="Buscar por nome ou CPF..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ minWidth: 260 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  {isFetching && searchInput
-                    ? <CircularProgress size={16} />
-                    : <Search fontSize="small" />}
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        {/* Linha 2 — busca + range de vencimento */}
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} useFlexGap alignItems={{ md: 'center' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar por nome ou CPF..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ flex: 1, minWidth: { xs: '100%', md: 280 } }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    {isFetching && searchInput
+                      ? <CircularProgress size={16} />
+                      : <Search fontSize="small" />}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+              Vencimento
+            </Typography>
+            <DatePickerField
+              label="De"
+              size="small"
+              value={dueDateFrom || null}
+              maxDate={dueDateTo || undefined}
+              onChange={(v) => { setDueDateFrom(v ?? ''); if (v) setExpiringSoonFilter(false) }}
+              sx={{ width: 150 }}
+            />
+            <DatePickerField
+              label="Até"
+              size="small"
+              value={dueDateTo || null}
+              minDate={dueDateFrom || undefined}
+              onChange={(v) => { setDueDateTo(v ?? ''); if (v) setExpiringSoonFilter(false) }}
+              sx={{ width: 150 }}
+            />
+          </Stack>
+        </Stack>
       </Stack>
 
       <DataTable

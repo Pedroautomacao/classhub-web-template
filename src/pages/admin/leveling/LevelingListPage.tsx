@@ -162,7 +162,7 @@ export function LevelingListPage() {
         title="Formulários de Nivelamento"
         subtitle="Acompanhe os leads e candidatos"
         helpContent={{
-          what: 'Esta tela exibe todos os formulários de nivelamento preenchidos por candidatos através do link público. O nivelamento avalia o nível de inglês e coleta dados de contato do potencial aluno.',
+          what: 'Esta é a aba "Respostas" da tela de Nivelamento — exibe todos os formulários preenchidos por candidatos através do link público. O nivelamento avalia o nível de inglês e coleta dados de contato do potencial aluno. A aba "Templates" (no topo) é onde você monta o formulário.',
           actions: [
             'Visualizar respostas completas de cada formulário submetido',
             'Atualizar o status do lead (analisando, matriculado, sem interesse, ghosted, lista de espera)',
@@ -171,7 +171,7 @@ export function LevelingListPage() {
           ],
           tips: [
             'Use os status para gerenciar o pipeline de vendas: analisando → matriculado ou sem interesse.',
-            'O template do formulário de nivelamento é configurável na tela "Templates de Nivelamento".',
+            'O formulário de nivelamento é configurável na aba "Templates", no topo desta mesma tela.',
             'Compartilhe o link público do formulário via tela de Links Compartilháveis.',
           ],
           flow: 'Link Público → Candidato preenche o Formulário → Aparece aqui → Admin analisa → Converte para Matrícula ou marca como sem interesse.',

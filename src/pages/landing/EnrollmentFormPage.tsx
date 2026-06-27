@@ -94,7 +94,7 @@ export function EnrollmentFormPage() {
       })
       setSubmitted(true)
     } catch {
-      setError('Ocorreu um erro ao enviar o formulário. Tente novamente.')
+      setError('Ocorreu um erro ao enviar a matrícula. Tente novamente.')
     }
   }
 
@@ -125,7 +125,7 @@ export function EnrollmentFormPage() {
             </Typography>
           )}
           <Typography variant="h4" fontWeight={700} textAlign="center" color="primary">
-            Formulário de Matrícula
+            Matrícula
           </Typography>
           <Typography color="text.secondary" textAlign="center" mt={1}>
             Preencha os dados abaixo para solicitar sua matrícula. Nossa equipe entrará em contato para finalizar o processo.
