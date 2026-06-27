@@ -1,5 +1,5 @@
 import api from './axios'
-import type { NpsQuestion, NpsResponse, NpsResponseCreate, NpsTemplate } from '@/types'
+import type { NpsQuestion, NpsResponse, NpsResponseCreate, NpsTemplate, PaginatedResponse } from '@/types'
 
 export interface NpsTemplateCreate {
   name: string
@@ -17,6 +17,8 @@ interface NpsResponseListParams {
   date_to?: string
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
 }
 
 export const npsTemplatesApi = {
@@ -46,9 +48,8 @@ export const npsApi = {
   submit: (data: NpsResponseCreate) =>
     api.post<NpsResponse>('/nps/', data).then((r) => r.data),
 
-  // Listagem não-paginada (convenção do template): retorna o array completo.
   list: (params?: NpsResponseListParams) =>
-    api.get<NpsResponse[]>('/nps/', { params }).then((r) => r.data),
+    api.get<PaginatedResponse<NpsResponse>>('/nps/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<NpsResponse>(`/nps/${id}`).then((r) => r.data),

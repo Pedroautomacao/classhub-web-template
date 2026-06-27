@@ -37,24 +37,28 @@ export function NpsAnalyticsTab() {
   const selectedTemplate = templates.find((t) => t.id === templateId)
 
   // Respostas da campanha selecionada (para os cards por pergunta)
-  const { data: scoped = [], isLoading } = useQuery({
+  const { data: scopedData, isLoading } = useQuery({
     queryKey: ['nps-analytics', templateId, dateFrom, dateTo],
     queryFn: () => npsApi.list({
       template_id: templateId,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
+      page: 1, page_size: 5000,
     }),
     enabled: !!templateId,
   })
+  const scoped = useMemo(() => scopedData?.items ?? [], [scopedData])
 
   // Respostas de TODAS as campanhas (para a linha de NPS no tempo)
-  const { data: allResponses = [] } = useQuery({
+  const { data: allData } = useQuery({
     queryKey: ['nps-trend', dateFrom, dateTo],
     queryFn: () => npsApi.list({
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
+      page: 1, page_size: 5000,
     }),
   })
+  const allResponses = useMemo(() => allData?.items ?? [], [allData])
 
   // Linha de NPS por mês (cruzando templates)
   const trend = useMemo(() => {

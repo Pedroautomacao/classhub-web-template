@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -35,22 +35,28 @@ export function NpsResponsesTab() {
   const [dateTo, setDateTo] = useState('')
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
+  const [page, setPage] = useState(1)
   const [viewResponse, setViewResponse] = useState<NpsResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<NpsResponse | null>(null)
 
   const { data: templates = [] } = useQuery({ queryKey: ['nps-templates'], queryFn: npsTemplatesApi.list })
   const templateName = (id: string | null) => templates.find((t) => t.id === id)?.name ?? '—'
 
-  const { data: responses = [], isLoading } = useQuery({
-    queryKey: ['nps-responses', templateFilter, dateFrom, dateTo, sortBy, sortOrder],
+  useEffect(() => { setPage(1) }, [templateFilter, dateFrom, dateTo, sortBy, sortOrder])
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['nps-responses', templateFilter, dateFrom, dateTo, sortBy, sortOrder, page],
     queryFn: () => npsApi.list({
       template_id: templateFilter || undefined,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
+      page,
+      page_size: 20,
     }),
   })
+  const responses = data?.items ?? []
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => npsApi.delete(id),
@@ -113,6 +119,9 @@ export function NpsResponsesTab() {
         rows={responses}
         loading={isLoading}
         emptyMessage="Nenhuma resposta encontrada."
+        page={data?.page}
+        pageCount={data?.pages}
+        onPageChange={setPage}
         sortableColumns={['created_at']}
         sortBy={sortBy}
         sortOrder={sortOrder}

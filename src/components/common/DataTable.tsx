@@ -10,6 +10,7 @@ import {
   Skeleton,
   Typography,
   Box,
+  Pagination,
   Button,
   CircularProgress,
 } from '@mui/material'
@@ -32,6 +33,9 @@ interface DataTableProps<T extends { id: string }> {
   loading?: boolean
   emptyMessage?: string
   skeletonRows?: number
+  page?: number
+  pageCount?: number
+  onPageChange?: (page: number) => void
   onExport?: () => void
   isExporting?: boolean
   sortableColumns?: string[]
@@ -46,6 +50,9 @@ export function DataTable<T extends { id: string }>({
   loading = false,
   emptyMessage = 'Nenhum registro encontrado.',
   skeletonRows = 5,
+  page,
+  pageCount,
+  onPageChange,
   onExport,
   isExporting = false,
   sortableColumns,
@@ -145,6 +152,18 @@ export function DataTable<T extends { id: string }>({
         </TableBody>
       </Table>
     </TableContainer>
+
+      {pageCount && pageCount > 1 && onPageChange && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Pagination
+            count={pageCount}
+            page={page ?? 1}
+            onChange={(_, p) => onPageChange(p)}
+            color="primary"
+            shape="rounded"
+          />
+        </Box>
+      )}
     </Box>
   )
 }

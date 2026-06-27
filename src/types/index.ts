@@ -1,4 +1,5 @@
 export * from './auth.types'
+export * from './pagination.types'
 export * from './plans.types'
 export * from './settings.types'
 export * from './leveling.types'
