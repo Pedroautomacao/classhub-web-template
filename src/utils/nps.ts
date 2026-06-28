@@ -39,6 +39,37 @@ export function isQuestionVisible(
   return question.condition.buckets.includes(npsBucket(ref))
 }
 
+/**
+ * Ordena as perguntas para exibição: cada follow-up condicional aparece logo
+ * após a pergunta que o dispara (e não na posição em que foi adicionado).
+ */
+export function orderQuestionsForDisplay(questions: NpsQuestion[]): NpsQuestion[] {
+  const condByTrigger = new Map<string, NpsQuestion[]>()
+  const base: NpsQuestion[] = []
+  for (const q of questions) {
+    if (q.condition) {
+      const list = condByTrigger.get(q.condition.question_id) ?? []
+      list.push(q)
+      condByTrigger.set(q.condition.question_id, list)
+    } else {
+      base.push(q)
+    }
+  }
+  const result: NpsQuestion[] = []
+  const placed = new Set<string>()
+  for (const q of base) {
+    result.push(q)
+    placed.add(q.id)
+    for (const dep of condByTrigger.get(q.id) ?? []) {
+      result.push(dep)
+      placed.add(dep.id)
+    }
+  }
+  // follow-ups órfãos (gatilho inexistente) vão para o fim
+  for (const q of questions) if (!placed.has(q.id)) result.push(q)
+  return result
+}
+
 /** Primeira pergunta tipo `nps` de uma lista (a "pergunta âncora" do NPS). */
 export function firstNpsQuestion(questions: NpsQuestion[] | null | undefined): NpsQuestion | undefined {
   return (questions ?? []).find((q) => q.type === 'nps')

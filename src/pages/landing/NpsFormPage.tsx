@@ -22,7 +22,7 @@ import {
 import { CheckCircle, Insights, Star } from '@mui/icons-material'
 import { npsApi, npsTemplatesApi } from '@/api/nps.api'
 import { settingsApi } from '@/api/settings.api'
-import { isQuestionVisible, npsScoreColor } from '@/utils/nps'
+import { isQuestionVisible, npsScoreColor, orderQuestionsForDisplay } from '@/utils/nps'
 import type { NpsAnswerValue, NpsQuestion } from '@/types'
 
 function isEmpty(v: NpsAnswerValue | undefined): boolean {
@@ -213,7 +213,7 @@ export function NpsFormPage() {
     retry: false,
   })
 
-  const visibleQuestions = (template?.questions ?? []).filter((q) => isQuestionVisible(q, answers))
+  const visibleQuestions = orderQuestionsForDisplay(template?.questions ?? []).filter((q) => isQuestionVisible(q, answers))
 
   const onSubmit = async () => {
     if (!template) return

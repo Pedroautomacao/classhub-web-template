@@ -89,7 +89,9 @@ function QuestionEditor({ index, question, npsOptions, onChange, onChangeType, o
               value={question.type}
               onChange={(e) => onChangeType(e.target.value as NpsQuestionType)}
             >
-              {Object.entries(TYPE_LABELS).map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
+              {Object.entries(TYPE_LABELS).map(([v, l]) => (
+                <MenuItem key={v} value={v} disabled={v === 'nps' && npsOptions.length > 0}>{l}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -281,6 +283,9 @@ function TemplateFormModal({ open, template, onClose }: TemplateFormModalProps) 
   const handleSave = () => {
     if (!name.trim()) { show('Dê um nome ao template.', 'error'); return }
     if (questions.length === 0) { show('Adicione pelo menos uma pergunta.', 'error'); return }
+    if (questions.filter((q) => q.type === 'nps').length > 1) {
+      show('Só é permitida uma pergunta do tipo NPS por template.', 'error'); return
+    }
     for (const q of questions) {
       if (!q.text.trim()) { show('Toda pergunta precisa de um texto.', 'error'); return }
       if ((q.type === 'single_choice' || q.type === 'multiple_choice')) {
@@ -319,7 +324,7 @@ function TemplateFormModal({ open, template, onClose }: TemplateFormModalProps) 
           <Box>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Typography variant="subtitle2">Perguntas ({questions.length})</Typography>
-              <Button size="small" startIcon={<Add />} onClick={() => setQuestions((p) => [newQuestion(), ...p])}>
+              <Button size="small" startIcon={<Add />} onClick={() => setQuestions((p) => [newQuestion(p.some((q) => q.type === 'nps') ? 'text' : 'nps'), ...p])}>
                 Adicionar pergunta
               </Button>
             </Stack>
