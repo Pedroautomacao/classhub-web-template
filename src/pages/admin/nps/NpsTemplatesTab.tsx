@@ -27,8 +27,16 @@ const TYPE_LABELS: Record<NpsQuestionType, string> = {
 
 const BUCKETS: NpsBucket[] = ['detractor', 'passive', 'promoter']
 
+function genQuestionId(): string {
+  // crypto.randomUUID só existe em contexto seguro (HTTPS/localhost); fallback p/ HTTP.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `q_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+}
+
 function newQuestion(type: NpsQuestionType = 'nps'): NpsQuestion {
-  const base: NpsQuestion = { id: crypto.randomUUID(), type, text: '', required: true }
+  const base: NpsQuestion = { id: genQuestionId(), type, text: '', required: true }
   if (type === 'single_choice' || type === 'multiple_choice') base.options = ['']
   if (type === 'rating') base.config = { max: 5 }
   if (type === 'scale') base.config = { min: 1, max: 5 }
@@ -311,7 +319,7 @@ function TemplateFormModal({ open, template, onClose }: TemplateFormModalProps) 
           <Box>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Typography variant="subtitle2">Perguntas ({questions.length})</Typography>
-              <Button size="small" startIcon={<Add />} onClick={() => setQuestions((p) => [...p, newQuestion()])}>
+              <Button size="small" startIcon={<Add />} onClick={() => setQuestions((p) => [newQuestion(), ...p])}>
                 Adicionar pergunta
               </Button>
             </Stack>
