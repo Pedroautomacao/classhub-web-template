@@ -180,35 +180,28 @@ function QuestionEditor({ index, question, npsOptions, onChange, onChangeType, o
                     })}
                   />
                 }
-                label={<Typography variant="caption">Mostrar só conforme a nota de uma pergunta de NPS</Typography>}
+                label={<Typography variant="caption">Mostrar só conforme a nota do NPS</Typography>}
               />
               {question.condition && (
-                <Stack spacing={1.5} mt={1}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Pergunta de NPS</InputLabel>
-                    <Select
-                      label="Pergunta de NPS"
-                      value={question.condition.question_id}
-                      onChange={(e) => onChange({ condition: { ...question.condition!, question_id: e.target.value } })}
-                    >
-                      {npsOptions.map((q) => (
-                        <MenuItem key={q.id} value={q.id}>{q.text || '(sem texto)'}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                <Stack spacing={0.5} mt={1}>
+                  <Typography variant="caption" color="text.secondary">
+                    Aparece de acordo com a nota da pergunta de NPS — selecione ao menos uma faixa:
+                  </Typography>
                   <FormGroup row>
                     {BUCKETS.map((b) => {
                       const checked = question.condition!.buckets.includes(b)
+                      const isLast = checked && question.condition!.buckets.length === 1
                       return (
                         <FormControlLabel
                           key={b}
                           control={
                             <Checkbox
-                              size="small" checked={checked}
+                              size="small" checked={checked} disabled={isLast}
                               onChange={(e) => {
                                 const buckets = e.target.checked
                                   ? [...question.condition!.buckets, b]
                                   : question.condition!.buckets.filter((x) => x !== b)
+                                if (buckets.length === 0) return
                                 onChange({ condition: { ...question.condition!, buckets } })
                               }}
                             />
@@ -291,6 +284,9 @@ function TemplateFormModal({ open, template, onClose }: TemplateFormModalProps) 
       if ((q.type === 'single_choice' || q.type === 'multiple_choice')) {
         const opts = (q.options ?? []).map((o) => o.trim()).filter(Boolean)
         if (opts.length === 0) { show(`A pergunta "${q.text}" precisa de ao menos uma opção.`, 'error'); return }
+      }
+      if (q.condition && q.condition.buckets.length === 0) {
+        show('Em perguntas condicionais, selecione ao menos uma faixa de NPS.', 'error'); return
       }
     }
     // Limpa opções vazias antes de enviar
