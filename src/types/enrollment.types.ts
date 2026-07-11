@@ -53,10 +53,13 @@ export interface PublicReEnrollmentRequest {
   phone?: string
   instagram?: string
   birth_date?: string
-  plan_id: string
-  payment_method: string
-  start_date: string
+  availability?: AvailabilityDay[] | null
+  opt_out?: boolean
+  plan_id?: string
+  payment_method?: string
+  start_date?: string
   grace_period_days?: number
+  contract_accepted?: boolean
 }
 
 export interface StudentLookupResult {
@@ -66,6 +69,7 @@ export interface StudentLookupResult {
   phone: string | null
   instagram: string | null
   birth_date: string | null
+  availability: AvailabilityDay[] | null
 }
 
 export interface EnrollmentResponse {

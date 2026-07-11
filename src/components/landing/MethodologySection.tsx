@@ -18,7 +18,7 @@ const METHODS: MethodCard[] = [
     icon: <RecordVoiceOverIcon sx={{ fontSize: 40 }} />,
     title: 'Aprendizado Prático',
     description:
-      'Foco total em conversação desde o primeiro dia. Desenvolvemos sua confiança para falar em situações reais do cotidiano.',
+      'Foco em conversação desde o primeiro dia (inclusive nas aulas de gramática). Vamos destravar o seu inglês com situações reais do dia a dia — nada de frases decoradas e material engessado!',
     accent: luminaPalette.primary.main,
     accentBg: 'rgba(27, 101, 108, 0.1)',
   },
@@ -26,7 +26,7 @@ const METHODS: MethodCard[] = [
     icon: <AutoStoriesIcon sx={{ fontSize: 40 }} />,
     title: 'Material Exclusivo',
     description:
-      'Acesso ilimitado a materiais digitais premium, exercícios interativos e biblioteca de áudio inclusos em todos os planos.',
+      'Acesso ilimitado aos materiais exclusivos, com textos, jogos e exercícios interativos de prática, fixação e revisão, além de um Planner de vocabulário para todos os níveis.',
     accent: luminaPalette.tertiary.main,
     accentBg: 'rgba(108, 31, 243, 0.1)',
   },
@@ -34,7 +34,7 @@ const METHODS: MethodCard[] = [
     icon: <ScheduleIcon sx={{ fontSize: 40 }} />,
     title: 'Flexibilidade Total',
     description:
-      'Estude no seu próprio ritmo com nossa plataforma 24/7. Organize sua agenda de acordo com sua disponibilidade e objetivos.',
+      'Estude no seu próprio ritmo. Aulas com horários flexíveis — manhã, tarde e noite — e turmas niveladas para o seu perfil!',
     accent: luminaPalette.secondary.main,
     accentBg: 'rgba(27, 109, 36, 0.1)',
   },
@@ -107,6 +107,7 @@ export function MethodologySection() {
                     fontFamily: '"Hanken Grotesk", sans-serif',
                     fontWeight: 700,
                     fontSize: { xs: 20, md: 22 },
+                    color: luminaPalette.neutral.text,
                   }}
                 >
                   {method.title}

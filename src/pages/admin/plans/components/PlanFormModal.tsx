@@ -27,17 +27,24 @@ const schema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
   duration_months: z.number({ message: 'Informe um número inteiro' }).int().min(1, 'Mínimo 1 mês'),
-  price: z.number({ message: 'Informe um valor' }).positive('Preço deve ser positivo'),
+  // Recebe texto (aceita vírgula ou ponto como separador decimal) e converte em float.
+  price: z
+    .string()
+    .min(1, 'Informe um valor')
+    .transform((v) => parseFloat(v.replace(/\./g, '').replace(',', '.')))
+    .refine((n) => Number.isFinite(n), 'Informe um valor válido')
+    .refine((n) => n > 0, 'Preço deve ser positivo'),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.input<typeof schema>
+type FormOutput = z.output<typeof schema>
 
 interface PlanFormModalProps {
   open: boolean
   plan?: Plan | null
   loading?: boolean
   onClose: () => void
-  onSubmit: (values: FormValues & { benefits: string[] }) => void
+  onSubmit: (values: FormOutput & { benefits: string[] }) => void
 }
 
 export function PlanFormModal({
@@ -60,7 +67,7 @@ export function PlanFormModal({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+  } = useForm<FormValues, unknown, FormOutput>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
     if (open) {
@@ -70,9 +77,10 @@ export function PlanFormModal({
               name: plan.name,
               description: plan.description ?? '',
               duration_months: plan.duration_months,
-              price: parseFloat(plan.price),
+              // Exibe com vírgula (locale pt-BR); o schema reconverte para float no submit.
+              price: parseFloat(plan.price).toFixed(2).replace('.', ','),
             }
-          : { name: '', description: '', duration_months: 1, price: 0 }
+          : { name: '', description: '', duration_months: 1, price: '' }
       )
       setBenefits(plan?.benefits ?? [])
       setBenefitInput('')
@@ -122,12 +130,13 @@ export function PlanFormModal({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Preço *"
-                type="number"
                 fullWidth
+                inputMode="decimal"
+                placeholder="0,00"
                 slotProps={{ input: { startAdornment: <InputAdornment position="start">R$</InputAdornment> } }}
                 error={!!errors.price}
                 helperText={errors.price?.message}
-                {...register('price', { valueAsNumber: true })}
+                {...register('price')}
               />
             </Grid>
           </Grid>

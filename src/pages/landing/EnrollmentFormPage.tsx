@@ -229,7 +229,7 @@ export function EnrollmentFormPage() {
                   <MenuItem value="" disabled>Selecione...</MenuItem>
                   {plans.map((p) => (
                     <MenuItem key={p.id} value={p.id}>
-                      {p.name} — {p.duration_months}m
+                      {p.name}
                     </MenuItem>
                   ))}
                 </TextField>

@@ -17,12 +17,16 @@ import {
   Stack,
   Divider,
   MenuItem,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
 } from '@mui/material'
 import { CheckCircle, School, Search, Person } from '@mui/icons-material'
 import { MuiTelInput } from 'mui-tel-input'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { DatePickerField } from '@/components/common/DatePickerField'
+import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 import { digitsToE164, e164ToDigits } from '@/utils/phone'
 import type { StudentLookupResult } from '@/types'
 
@@ -40,21 +44,49 @@ const PAYMENT_METHODS = [
   { value: 'pix', label: 'PIX — Valor integral do plano' },
 ]
 
-const schema = z.object({
-  cpf: z.string().min(14, 'CPF inválido'),
-  email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
-  phone: z.string().min(1, 'Telefone obrigatório'),
-  instagram: z.string().optional(),
-  birth_date: z.string().min(1, 'Data de nascimento obrigatória'),
-  plan_id: z.string().min(1, 'Selecione um plano'),
-  payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
-  start_date: z.string().min(1, 'Informe a data de cobrança'),
-})
+const schema = z
+  .object({
+    cpf: z.string().min(14, 'CPF inválido'),
+    email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
+    phone: z.string().min(1, 'Telefone obrigatório'),
+    instagram: z.string().optional(),
+    birth_date: z.string().min(1, 'Data de nascimento obrigatória'),
+    availability: z.array(availabilityDaySchema).optional(),
+    // Quando true, o aluno optou por NÃO renovar a matrícula.
+    opt_out: z.boolean().optional(),
+    // Campos de renovação — validados condicionalmente abaixo.
+    plan_id: z.string().optional(),
+    payment_method: z.enum(['pix', 'credit_card']).optional(),
+    start_date: z.string().optional(),
+    contract_accepted: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Ao não renovar, os campos de plano/contrato não são exigidos.
+    if (data.opt_out) return
+
+    if (!data.plan_id) {
+      ctx.addIssue({ code: 'custom', message: 'Selecione um plano', path: ['plan_id'] })
+    }
+    if (!data.payment_method) {
+      ctx.addIssue({ code: 'custom', message: 'Selecione a forma de pagamento', path: ['payment_method'] })
+    }
+    if (!data.start_date) {
+      ctx.addIssue({ code: 'custom', message: 'Informe a data de cobrança', path: ['start_date'] })
+    }
+    if (data.contract_accepted !== true) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Você deve aceitar os termos para continuar',
+        path: ['contract_accepted'],
+      })
+    }
+  })
 
 type FormValues = z.infer<typeof schema>
 
 export function ReEnrollmentFormPage() {
   const [submitted, setSubmitted] = useState(false)
+  const [optedOut, setOptedOut] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [student, setStudent] = useState<StudentLookupResult | null>(null)
   const [lookupLoading, setLookupLoading] = useState(false)
@@ -75,14 +107,27 @@ export function ReEnrollmentFormPage() {
     handleSubmit,
     control,
     register,
+    watch,
     setValue,
     getValues,
+    reset,
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { cpf: '', email: '', phone: '', instagram: '', birth_date: '' },
+    defaultValues: {
+      cpf: '',
+      email: '',
+      phone: '',
+      instagram: '',
+      birth_date: '',
+      availability: [],
+      opt_out: false,
+      contract_accepted: false,
+    },
   })
+
+  const wantsToOptOut = watch('opt_out')
 
   const handleSearch = async () => {
     const cpf = getValues('cpf')
@@ -100,6 +145,8 @@ export function ReEnrollmentFormPage() {
       setValue('phone', digitsToE164(found.phone), { shouldValidate: false })
       setValue('instagram', found.instagram ?? '', { shouldValidate: false })
       setValue('birth_date', found.birth_date ?? '', { shouldValidate: false })
+      // Traz a disponibilidade já cadastrada para o aluno editar se quiser.
+      reset((prev) => ({ ...prev, availability: found.availability ?? [] }))
     } catch {
       setLookupError('Aluno não encontrado. Verifique o CPF informado.')
     } finally {
@@ -117,13 +164,16 @@ export function ReEnrollmentFormPage() {
         phone: e164ToDigits(values.phone),
         instagram: values.instagram || undefined,
         birth_date: values.birth_date,
-        plan_id: values.plan_id,
-        payment_method: values.payment_method,
-        start_date: values.start_date,
+        availability: values.availability?.length ? values.availability : undefined,
+        opt_out: values.opt_out || undefined,
+        plan_id: values.opt_out ? undefined : values.plan_id,
+        payment_method: values.opt_out ? undefined : values.payment_method,
+        start_date: values.opt_out ? undefined : values.start_date,
       })
+      setOptedOut(!!values.opt_out)
       setSubmitted(true)
     } catch {
-      setSubmitError('Ocorreu um erro ao enviar a rematrícula. Tente novamente.')
+      setSubmitError('Ocorreu um erro ao enviar a solicitação. Tente novamente.')
     }
   }
 
@@ -132,12 +182,25 @@ export function ReEnrollmentFormPage() {
       <Box sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
         <Paper sx={{ p: 6, textAlign: 'center', maxWidth: 480 }}>
           <CheckCircle color="success" sx={{ fontSize: 72, mb: 2 }} />
-          <Typography variant="h5" fontWeight={700} gutterBottom>
-            Solicitação enviada!
-          </Typography>
-          <Typography color="text.secondary">
-            Recebemos sua solicitação de rematrícula. Nossa equipe entrará em contato em breve para confirmar os detalhes.
-          </Typography>
+          {optedOut ? (
+            <>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Matrícula encerrada
+              </Typography>
+              <Typography color="text.secondary">
+                Registramos que você não deseja renovar sua matrícula. Foi uma alegria ter você com a gente — sentiremos sua falta! As portas ficam sempre abertas para o seu retorno.
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Solicitação enviada!
+              </Typography>
+              <Typography color="text.secondary">
+                Recebemos sua solicitação de rematrícula. Nossa equipe entrará em contato em breve para confirmar os detalhes.
+              </Typography>
+            </>
+          )}
         </Paper>
       </Box>
     )
@@ -283,63 +346,126 @@ export function ReEnrollmentFormPage() {
 
                 <Divider />
 
-                {/* Seção: Plano e Início */}
-                <Typography variant="subtitle1" fontWeight={600} color="primary">
-                  Plano e Início
-                </Typography>
+                {/* Disponibilidade — pré-preenchida com o que o aluno já tem cadastrado */}
+                <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
 
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Plano *"
-                      select
-                      fullWidth
-                      defaultValue=""
-                      error={!!errors.plan_id}
-                      helperText={errors.plan_id?.message}
-                      {...register('plan_id')}
-                    >
-                      <MenuItem value="" disabled>Selecione...</MenuItem>
-                      {plans.map((p) => (
-                        <MenuItem key={p.id} value={p.id}>
-                          {p.name} — {p.duration_months}m
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      label="Forma de pagamento *"
-                      select
-                      fullWidth
-                      defaultValue=""
-                      error={!!errors.payment_method}
-                      helperText={errors.payment_method?.message}
-                      {...register('payment_method')}
-                    >
-                      <MenuItem value="" disabled>Selecione...</MenuItem>
-                      {PAYMENT_METHODS.map((m) => (
-                        <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 5 }}>
+                <Divider />
+
+                {/* Opção de não renovar */}
+                <Controller
+                  name="opt_out"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={!!field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2">
+                          Não quero renovar minha matrícula.
+                        </Typography>
+                      }
+                    />
+                  )}
+                />
+
+                {wantsToOptOut && (
+                  <Alert severity="warning">
+                    Ao confirmar, sua matrícula será encerrada e você será removido das turmas em que estiver. Você pode rematricular-se a qualquer momento.
+                  </Alert>
+                )}
+
+                {/* Seção: Plano e Início — oculta quando o aluno opta por não renovar */}
+                {!wantsToOptOut && (
+                  <>
+                    <Typography variant="subtitle1" fontWeight={600} color="primary">
+                      Plano e Início
+                    </Typography>
+
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Plano *"
+                          select
+                          fullWidth
+                          defaultValue=""
+                          error={!!errors.plan_id}
+                          helperText={errors.plan_id?.message}
+                          {...register('plan_id')}
+                        >
+                          <MenuItem value="" disabled>Selecione...</MenuItem>
+                          {plans.map((p) => (
+                            <MenuItem key={p.id} value={p.id}>
+                              {p.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Forma de pagamento *"
+                          select
+                          fullWidth
+                          defaultValue=""
+                          error={!!errors.payment_method}
+                          helperText={errors.payment_method?.message}
+                          {...register('payment_method')}
+                        >
+                          <MenuItem value="" disabled>Selecione...</MenuItem>
+                          {PAYMENT_METHODS.map((m) => (
+                            <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 5 }}>
+                        <Controller
+                          name="start_date"
+                          control={control}
+                          render={({ field }) => (
+                            <DatePickerField
+                              label="Data de cobrança *"
+                              fullWidth
+                              value={field.value || null}
+                              onChange={(v) => field.onChange(v ?? '')}
+                              error={!!errors.start_date}
+                              helperText={errors.start_date?.message}
+                            />
+                          )}
+                        />
+                      </Grid>
+                    </Grid>
+
                     <Controller
-                      name="start_date"
+                      name="contract_accepted"
                       control={control}
                       render={({ field }) => (
-                        <DatePickerField
-                          label="Data de cobrança *"
-                          fullWidth
-                          value={field.value || null}
-                          onChange={(v) => field.onChange(v ?? '')}
-                          error={!!errors.start_date}
-                          helperText={errors.start_date?.message}
-                        />
+                        <FormControl error={!!errors.contract_accepted}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                Declaro que recebi, li e aceito os termos de contrato. *
+                              </Typography>
+                            }
+                          />
+                          {errors.contract_accepted && (
+                            <Typography variant="caption" color="error" mt={0.5}>
+                              {errors.contract_accepted.message}
+                            </Typography>
+                          )}
+                        </FormControl>
                       )}
                     />
-                  </Grid>
-                </Grid>
+                  </>
+                )}
 
                 {submitError && <Alert severity="error">{submitError}</Alert>}
 
@@ -348,10 +474,15 @@ export function ReEnrollmentFormPage() {
                   variant="contained"
                   size="large"
                   fullWidth
+                  color={wantsToOptOut ? 'error' : 'primary'}
                   disabled={isSubmitting}
                   startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : null}
                 >
-                  {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
+                  {isSubmitting
+                    ? 'Enviando...'
+                    : wantsToOptOut
+                      ? 'Confirmar cancelamento'
+                      : 'Enviar Solicitação'}
                 </Button>
               </>
             )}
