@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Box, Stack, TextField, MenuItem, InputAdornment, IconButton, Tooltip, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, CircularProgress,
 } from '@mui/material'
 import { Search, Edit, WhatsApp } from '@mui/icons-material'
 import dayjs from 'dayjs'
@@ -47,7 +47,6 @@ const CONTRACT_STATUS_COLOR: Record<ContractDisplayStatus, 'success' | 'warning'
   no_contract: 'default',
 }
 
-
 function formatBRL(v: string | number | null | undefined): string {
   if (v == null) return '—'
   const n = typeof v === 'string' ? parseFloat(v) : v
@@ -68,6 +67,7 @@ export function PaymentsListPage() {
   const [dayFilter, setDayFilter] = useState('')
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
+  const [page, setPage] = useState(1)
 
   const [editTarget, setEditTarget] = useState<PaymentRow | null>(null)
   const [editPlan, setEditPlan] = useState<string>('')
@@ -79,14 +79,17 @@ export function PaymentsListPage() {
     return () => clearTimeout(t)
   }, [searchInput])
 
-  const { data: plans = [] } = useQuery({
+  useEffect(() => { setPage(1) }, [search, planFilter, methodFilter, dayFilter, sortBy, sortOrder])
+
+  const { data: plansData } = useQuery({
     queryKey: ['plans', 'all-for-payments'],
-    queryFn: () => plansApi.list(),
+    queryFn: () => plansApi.list({ page_size: 9999 }),
     staleTime: 60_000,
   })
+  const plans = plansData?.items ?? []
 
-  const { data: rows = [], isLoading, refetch } = useQuery({
-    queryKey: ['payments', search, planFilter, methodFilter, dayFilter, sortBy, sortOrder],
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['payments', search, planFilter, methodFilter, dayFilter, sortBy, sortOrder, page],
     queryFn: () => paymentsApi.list({
       search: search || undefined,
       plan_id: planFilter || undefined,
@@ -94,8 +97,12 @@ export function PaymentsListPage() {
       payment_day: dayFilter ? Number(dayFilter) : undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
+      page,
+      page_size: 20,
     }),
   })
+
+  const rows = data?.items ?? []
 
   const updateMutation = useMutation({
     mutationFn: ({ studentId, payload }: { studentId: string; payload: { plan_id?: string | null; payment_method?: PaymentMethod | null; payment_day?: number | null } }) =>
@@ -223,7 +230,9 @@ export function PaymentsListPage() {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search fontSize="small" />
+                  {isFetching && searchInput
+                    ? <CircularProgress size={16} />
+                    : <Search fontSize="small" />}
                 </InputAdornment>
               ),
             },
@@ -265,12 +274,16 @@ export function PaymentsListPage() {
         rows={rows}
         loading={isLoading}
         emptyMessage="Nenhum aluno encontrado."
+        page={data?.page}
+        pageCount={data?.pages}
+        onPageChange={setPage}
         sortableColumns={['full_name', 'phone', 'payment_day', 'payment_method', 'created_at']}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
       />
 
+      {/* Modal de edição */}
       <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Editar Pagamento</DialogTitle>
         <DialogContent>

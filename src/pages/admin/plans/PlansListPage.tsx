@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Box, IconButton, Switch, Tooltip, Stack } from '@mui/material'
 import { Edit, Delete } from '@mui/icons-material'
@@ -9,9 +9,9 @@ import { PlanFormModal } from './components/PlanFormModal'
 import { plansApi } from '@/api/plans.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
-import { exportToXlsx } from '@/utils/export'
 import type { Plan } from '@/types'
 
 export function PlansListPage() {
@@ -24,14 +24,33 @@ export function PlansListPage() {
   const [selected, setSelected] = useState<Plan | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Plan | null>(null)
   const [toggleTarget, setToggleTarget] = useState<Plan | null>(null)
+  const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
 
-  const { data: plans = [], isLoading, refetch } = useQuery({
-    queryKey: ['plans', sortBy, sortOrder],
-    queryFn: () => plansApi.list({ sort_by: sortBy, sort_order: sortOrder }),
+  useEffect(() => { setPage(1) }, [sortBy, sortOrder])
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['plans', page, sortBy, sortOrder],
+    queryFn: () => plansApi.list({ sort_by: sortBy, sort_order: sortOrder, page, page_size: 20 }),
   })
+
+  const plans = data?.items ?? []
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await plansApi.list({ page: 1, page_size: 9999 })
+      exportToXlsx(all.items, [
+        { label: 'Nome', value: (p) => p.name },
+        { label: 'Descrição', value: (p) => p.description ?? '' },
+        { label: 'Preço', value: (p) => p.price ?? '' },
+      ], 'planos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const createMutation = useMutation({
     mutationFn: plansApi.create,
@@ -83,20 +102,6 @@ export function PlansListPage() {
   const handleToggleActive = (plan: Plan) => {
     updateMutation.mutate({ id: plan.id, data: { is_active: !plan.is_active } })
     setToggleTarget(null)
-  }
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await plansApi.list()
-      exportToXlsx(rows, [
-        { label: 'Nome', value: (p) => p.name },
-        { label: 'Descrição', value: (p) => p.description ?? '' },
-        { label: 'Preço', value: (p) => p.price ?? '' },
-      ], 'planos')
-    } finally {
-      setIsExporting(false)
-    }
   }
 
   const columns: Column<Plan>[] = [
@@ -193,6 +198,9 @@ export function PlansListPage() {
         rows={plans}
         loading={isLoading}
         emptyMessage="Nenhum plano cadastrado."
+        page={data?.page}
+        pageCount={data?.pages}
+        onPageChange={setPage}
         onExport={handleExport}
         isExporting={isExporting}
         sortableColumns={['name', 'duration_months', 'price', 'is_active', 'created_at']}

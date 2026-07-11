@@ -39,8 +39,10 @@ export function ReEnrollmentPage() {
   const { show } = useSnackbarStore()
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
 
-  const { data: plans = [] } = useQuery({ queryKey: ['plans'], queryFn: () => plansApi.list(true) })
-  const { data: students = [] } = useQuery({ queryKey: ['students'], queryFn: () => studentsApi.list() })
+  const { data: plansData } = useQuery({ queryKey: ['plans', 'active'], queryFn: () => plansApi.list({ only_active: true }) })
+  const plans = plansData?.items ?? []
+  const { data: studentsData } = useQuery({ queryKey: ['students', 'all'], queryFn: () => studentsApi.list({ page_size: 9999 }) })
+  const students = studentsData?.items ?? []
 
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),

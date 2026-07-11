@@ -13,7 +13,7 @@ const STOPWORDS = new Set([
   'tem', 'tinha', 'ter', 'sobre', 'como', 'quando', 'tambem', 'so', 'me', 'meus',
   'minhas', 'seus', 'suas', 'pelo', 'pela', 'dele', 'dela', 'todo', 'toda', 'todos',
   'todas', 'ate', 'entre', 'depois', 'antes', 'porque', 'pois', 'entao', 'aqui',
-  'ai', 'era', 'estou', 'estao', 'fica', 'ficou', 'vai', 'vou',
+  'ai', 'foi', 'era', 'estou', 'esta', 'estao', 'fica', 'ficou', 'vai', 'vou',
 ])
 
 const POSITIVE = new Set([

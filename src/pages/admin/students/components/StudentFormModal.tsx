@@ -32,17 +32,19 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { digitsToE164, e164ToDigits } from '@/utils/phone'
 import type { Student, AvailabilityDay } from '@/types'
 
-function maskCpf(cpf: string) {
-  const d = cpf.replace(/\D/g, '')
-  return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+function maskCpf(value: string) {
+  return value.replace(/\D/g, '').slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
 }
 
 const schema = z.object({
   full_name: z.string().min(2, 'Nome obrigatório'),
+  cpf: z.string().min(1, 'CPF obrigatório'),
   email: z.string().email('E-mail inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
   instagram: z.string().optional(),
-  cpf: z.string().optional(),
   birth_date: z.string().optional(),
   availability: z.array(availabilityDaySchema).optional(),
   level: z.string().optional(),
@@ -72,7 +74,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
   const { show } = useSnackbarStore()
 
-  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
@@ -97,12 +99,12 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
     }
   }, [open, student, reset])
 
-  const { data: contracts = [] } = useQuery({
+  const { data: contractsData } = useQuery({
     queryKey: ['contracts', { student_id: student?.id, contract_status: 'active' }],
     queryFn: () => contractsApi.list({ student_id: student!.id, contract_status: 'active' }),
     enabled: open && !!student,
   })
-  const activeContract = contracts[0] ?? null
+  const activeContract = contractsData?.items[0] ?? null
   const contractFile = activeContract?.file ?? null
 
   const handleDownload = async () => {
@@ -121,6 +123,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
       <DialogContent>
         <Stack component="form" id="student-form" onSubmit={handleSubmit((values) => onSubmit({
           ...values,
+          cpf: values.cpf.replace(/\D/g, ''),
           email: values.email || null,
           phone: e164ToDigits(values.phone) || null,
           instagram: values.instagram || null,
@@ -136,6 +139,32 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
             {...register('full_name')}
           />
           <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="CPF *"
+                fullWidth
+                placeholder="000.000.000-00"
+                inputProps={{ inputMode: 'numeric' }}
+                error={!!errors.cpf}
+                helperText={errors.cpf?.message}
+                {...register('cpf')}
+                onChange={(e) => setValue('cpf', maskCpf(e.target.value))}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="birth_date"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerField
+                    label="Data de nascimento"
+                    fullWidth
+                    value={field.value || null}
+                    onChange={(v) => field.onChange(v ?? '')}
+                  />
+                )}
+              />
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="E-mail"
@@ -163,23 +192,6 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField label="Instagram" fullWidth {...register('instagram')} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="CPF" fullWidth {...register('cpf')} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="birth_date"
-                control={control}
-                render={({ field }) => (
-                  <DatePickerField
-                    label="Data de nascimento"
-                    fullWidth
-                    value={field.value || null}
-                    onChange={(v) => field.onChange(v ?? '')}
-                  />
-                )}
-              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller

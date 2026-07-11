@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Student, StudentStatus, AvailabilityDay } from '@/types'
+import type { Student, StudentStatus, AvailabilityDay, PaginatedResponse } from '@/types'
 
 export interface StudentUpdate {
   full_name?: string
@@ -19,15 +19,18 @@ export interface StudentUpdate {
 
 export interface StudentListParams {
   status?: StudentStatus
+  search?: string
   created_after?: string
   created_before?: string
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
 }
 
 export const studentsApi = {
   list: (params?: StudentListParams) =>
-    api.get<Student[]>('/students/', { params }).then((r) => r.data),
+    api.get<PaginatedResponse<Student>>('/students/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<Student>(`/students/${id}`).then((r) => r.data),

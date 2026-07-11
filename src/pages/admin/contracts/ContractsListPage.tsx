@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from 'react'
-import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
@@ -8,7 +7,7 @@ import {
   TextField, InputAdornment, CircularProgress,
 } from '@mui/material'
 import { Search } from '@mui/icons-material'
-import { Cancel, InsertDriveFile, UploadFile, Delete, Download } from '@mui/icons-material'
+import { Cancel, InsertDriveFile, UploadFile, Delete, Download, Edit } from '@mui/icons-material'
 import dayjs from 'dayjs'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable, type Column, type SortOrder } from '@/components/common/DataTable'
@@ -20,6 +19,7 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import type { Contract, ContractStatus, FileMetadata } from '@/types'
 
 const STATUS_LABELS: Record<ContractStatus, string> = {
@@ -34,7 +34,8 @@ const STATUS_COLORS: Record<ContractStatus, 'success' | 'error' | 'default'> = {
   cancelled: 'default',
 }
 
-function isExpiringSoon(end_date: string) {
+function isExpiringSoon(end_date: string | null) {
+  if (!end_date) return false
   const diff = dayjs(end_date).startOf('day').diff(dayjs().startOf('day'), 'day')
   return diff >= 0 && diff <= 30
 }
@@ -59,12 +60,17 @@ export function ContractsListPage() {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400)
     return () => clearTimeout(timer)
   }, [searchInput])
+
+  const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
+  useEffect(() => { setPage(1) }, [statusFilter, expiringSoonFilter, dueDateFrom, dueDateTo, search, sortBy, sortOrder])
   const [cancelTarget, setCancelTarget] = useState<Contract | null>(null)
   const [fileContract, setFileContract] = useState<Contract | null>(null)
   const [deleteFileTarget, setDeleteFileTarget] = useState<FileMetadata | null>(null)
+  const [editEndDateTarget, setEditEndDateTarget] = useState<Contract | null>(null)
+  const [editEndDateValue, setEditEndDateValue] = useState<string>('')
 
   const filterParams = {
     ...(statusFilter ? { contract_status: statusFilter } : {}),
@@ -74,14 +80,37 @@ export function ContractsListPage() {
     ...(search ? { search } : {}),
   }
 
-  const { data: contracts = [], isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['contracts', statusFilter, expiringSoonFilter, dueDateFrom, dueDateTo, search, sortBy, sortOrder],
+  const { data: contractsData, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['contracts', statusFilter, expiringSoonFilter, dueDateFrom, dueDateTo, search, page, sortBy, sortOrder],
     queryFn: () => contractsApi.list({
       ...filterParams,
       sort_by: sortBy,
       sort_order: sortOrder,
+      page,
+      page_size: 20,
     }),
   })
+
+  const contracts = contractsData?.items ?? []
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await contractsApi.list({
+        ...filterParams,
+        page: 1,
+        page_size: 9999,
+      })
+      exportToXlsx(all.items, [
+        { label: 'Aluno', value: (c) => c.student?.full_name ?? '' },
+        { label: 'Status', value: (c) => c.status },
+        { label: 'Início', value: (c) => c.start_date ?? '' },
+        { label: 'Fim', value: (c) => c.end_date ?? '' },
+      ], 'contratos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const cancelMutation = useMutation({
     mutationFn: contractsApi.cancel,
@@ -138,6 +167,17 @@ export function ContractsListPage() {
     }
   }
 
+  const updateEndDateMutation = useMutation({
+    mutationFn: ({ id, end_date }: { id: string; end_date: string | null }) =>
+      contractsApi.update(id, { end_date }),
+    onSuccess: () => {
+      refetch()
+      setEditEndDateTarget(null)
+      show('Data de término atualizada.')
+    },
+    onError: (error) => show(getApiError(error, 'Erro ao atualizar contrato.'), 'error'),
+  })
+
   const isSaving = createFileMutation.isPending || replaceFileMutation.isPending
 
   const handleDownload = async (file: FileMetadata) => {
@@ -149,23 +189,6 @@ export function ContractsListPage() {
     }
   }
 
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await contractsApi.list({
-        ...filterParams,
-      })
-      exportToXlsx(rows, [
-        { label: 'Aluno', value: (c) => c.student?.full_name ?? '' },
-        { label: 'Status', value: (c) => c.status ?? '' },
-        { label: 'Início', value: (c) => c.start_date ?? '' },
-        { label: 'Fim', value: (c) => c.end_date ?? '' },
-      ], 'contratos')
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
   const columns: Column<Contract>[] = [
     { key: 'student', label: 'Aluno', render: (c) => c.student?.full_name ?? '—' },
     { key: 'start_date', label: 'Início', render: (c) => dayjs(c.start_date).format('DD/MM/YYYY') },
@@ -173,9 +196,22 @@ export function ContractsListPage() {
       key: 'end_date', label: 'Término',
       render: (c) => (
         <Stack direction="row" alignItems="center" spacing={1}>
-          <span>{dayjs(c.end_date).format('DD/MM/YYYY')}</span>
+          <span>{c.end_date ? dayjs(c.end_date).format('DD/MM/YYYY') : '—'}</span>
           {isExpiringSoon(c.end_date) && c.status === 'active' && (
             <Chip label="Expira em breve" color="warning" size="small" />
+          )}
+          {canWrite && (
+            <Tooltip title="Editar data de término">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setEditEndDateTarget(c)
+                  setEditEndDateValue(c.end_date ?? '')
+                }}
+              >
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Stack>
       ),
@@ -321,6 +357,9 @@ export function ContractsListPage() {
             }}
           />
         }
+        page={expiringSoonFilter ? undefined : contractsData?.page}
+        pageCount={expiringSoonFilter ? undefined : contractsData?.pages}
+        onPageChange={expiringSoonFilter ? undefined : setPage}
         onExport={handleExport}
         isExporting={isExporting}
         sortableColumns={['start_date', 'end_date', 'status', 'created_at']}
@@ -408,6 +447,42 @@ export function ContractsListPage() {
         onConfirm={() => deleteFileTarget && deleteFileMutation.mutate(deleteFileTarget.id)}
         onCancel={() => setDeleteFileTarget(null)}
       />
+
+      {/* Editar data de término */}
+      <Dialog open={!!editEndDateTarget} onClose={() => setEditEndDateTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Editar Data de Término</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Aluno: <strong>{editEndDateTarget?.student?.full_name}</strong>
+            </Typography>
+            <DatePickerField
+              label="Data de término"
+              fullWidth
+              value={editEndDateValue || null}
+              onChange={(v) => setEditEndDateValue(v ?? '')}
+              helperText="Deixe em branco para contrato sem data de término definida."
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditEndDateTarget(null)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            disabled={updateEndDateMutation.isPending}
+            startIcon={updateEndDateMutation.isPending ? <CircularProgress size={16} color="inherit" /> : null}
+            onClick={() => {
+              if (!editEndDateTarget) return
+              updateEndDateMutation.mutate({
+                id: editEndDateTarget.id,
+                end_date: editEndDateValue || null,
+              })
+            }}
+          >
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

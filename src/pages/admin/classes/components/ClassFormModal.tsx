@@ -17,7 +17,7 @@ import { studentsApi } from '@/api/students.api'
 import { settingsApi } from '@/api/settings.api'
 import { studentMatchesClass, teacherMatchesClass, findTeacherScheduleConflict, DAYS } from '@/utils/availability'
 import { classesApi } from '@/api/classes.api'
-import type { Class, Teacher, Student } from '@/types'
+import type { Class } from '@/types'
 
 
 const scheduleEntrySchema = z.object({
@@ -55,7 +55,6 @@ type FormValues = z.infer<typeof schema>
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 type DayValue = typeof DAY_NAMES[number]
-type BiweeklyDay = { value: DayValue; label: string; shortLabel: string; dateNum: number }
 
 function getDayFromDate(dateStr: string): DayValue {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -75,8 +74,10 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
 
   const isEdit = !!cls
-  const { data: teachers = [] } = useQuery<Teacher[]>({ queryKey: ['teachers'], queryFn: () => teachersApi.list() })
-  const { data: students = [] } = useQuery<Student[]>({ queryKey: ['students'], queryFn: () => studentsApi.list() })
+  const { data: teachersData } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list({ page_size: 9999 }) })
+  const teachers = teachersData?.items ?? []
+  const { data: studentsData } = useQuery({ queryKey: ['students'], queryFn: () => studentsApi.list({ page_size: 9999 }) })
+  const students = studentsData?.items ?? []
 
   const { data: settingsData } = useQuery({
     queryKey: ['settings'],
@@ -97,7 +98,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
   const watchedLevels = watch('levels') ?? []
   const watchedFrequency = watch('frequency')
   const watchedBiweeklyStartDate = watch('biweekly_start_date')
-  const selectedTeacher = teachers.find((t: Teacher) => t.id === watchedTeacherId)
+  const selectedTeacher = teachers.find((t) => t.id === watchedTeacherId)
 
   // Derived day of week from the biweekly start date
   const biweeklyDay: DayValue | null =
@@ -109,7 +110,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
     ? (DAYS.find((d) => d.value === biweeklyDay)?.label ?? '')
     : ''
 
-  const biweeklyWeekDates = useMemo((): BiweeklyDay[] => {
+  const biweeklyWeekDates = useMemo(() => {
     if (!watchedBiweeklyStartDate) return []
     const [y, m, d] = watchedBiweeklyStartDate.split('-').map(Number)
     const dow = new Date(y, m - 1, d).getDay()
@@ -130,25 +131,25 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
 
   const handleToggleBiweeklyDay = (dayVal: DayValue) => {
     const indices = watchedSchedule
-      .map((e: { day: string }, i: number) => (e.day === dayVal ? i : -1))
-      .filter((i: number) => i >= 0)
+      .map((e, i) => (e.day === dayVal ? i : -1))
+      .filter((i) => i >= 0)
     if (indices.length > 0) {
-      ;[...indices].reverse().forEach((i: number) => remove(i))
+      ;[...indices].reverse().forEach((i) => remove(i))
     } else {
       append({ day: dayVal, start_time: '', end_time: '' })
     }
   }
 
-  const { data: allClasses = [] } = useQuery<Class[]>({
+  const { data: allClassesData } = useQuery({
     queryKey: ['classes', 'all-for-conflict'],
-    queryFn: () => classesApi.list(),
+    queryFn: () => classesApi.list({ page_size: 9999 }),
     staleTime: 30_000,
   })
   const teacherClasses = watchedTeacherId
-    ? allClasses.filter((c: Class) => c.teacher_id === watchedTeacherId)
+    ? (allClassesData?.items ?? []).filter((c: Class) => c.teacher_id === watchedTeacherId)
     : []
 
-  const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e: { start_time: string }) => e.start_time)
+  const classInfoReady = watchedSchedule.length > 0 && watchedSchedule.some((e) => e.start_time)
 
   const teacherScheduleConflict = classInfoReady && teacherClasses.length > 0
     ? findTeacherScheduleConflict(
@@ -161,13 +162,13 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
 
   const conflictingStudents = classInfoReady
     ? students.filter(
-        (s: Student) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
+        (s) => watchedStudentIds.includes(s.id) && !studentMatchesClass(s.availability, watchedSchedule),
       )
     : []
 
   const levelMismatchStudents = watchedLevels.length > 0
     ? students.filter(
-        (s: Student) => watchedStudentIds.includes(s.id) && !!s.level && !watchedLevels.includes(s.level),
+        (s) => watchedStudentIds.includes(s.id) && !!s.level && !watchedLevels.includes(s.level),
       )
     : []
 
@@ -221,7 +222,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 render={({ field }) => (
                   <TextField select label="Professor" fullWidth {...field} value={field.value ?? ''}>
                     <MenuItem value="">Sem professor</MenuItem>
-                    {teachers.map((t: Teacher) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                    {teachers.map((t) => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                   </TextField>
                 )}
               />
@@ -260,7 +261,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             </Grid>
             {isBiweekly && (
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller<FormValues, 'biweekly_start_date'>
+                <Controller
                   name="biweekly_start_date"
                   control={control}
                   render={({ field }) => (
@@ -324,8 +325,8 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             {errors.schedule?.root && (
               <Typography variant="caption" color="error">{errors.schedule.root.message}</Typography>
             )}
-            {errors.schedule && !Array.isArray(errors.schedule) && (errors.schedule as { message?: string }).message && (
-              <Typography variant="caption" color="error">{(errors.schedule as { message?: string }).message}</Typography>
+            {errors.schedule && !Array.isArray(errors.schedule) && (errors.schedule as any).message && (
+              <Typography variant="caption" color="error">{(errors.schedule as any).message}</Typography>
             )}
 
             {isBiweekly ? (
@@ -338,7 +339,7 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                 <Stack spacing={1.5}>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
                     {biweeklyWeekDates.map((wd) => {
-                      const isSelected = watchedSchedule.some((e: { day: string }) => e.day === wd.value)
+                      const isSelected = watchedSchedule.some((e) => e.day === wd.value)
                       return (
                         <Chip
                           key={wd.value}
@@ -353,29 +354,29 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                     })}
                   </Stack>
                   {biweeklyWeekDates
-                    .filter((wd) => watchedSchedule.some((e: { day: string }) => e.day === wd.value))
+                    .filter((wd) => watchedSchedule.some((e) => e.day === wd.value))
                     .map((wd) => {
                       const dayIndices = fields
-                        .map((_f: unknown, i: number) => (watchedSchedule[i]?.day === wd.value ? i : -1))
-                        .filter((i: number) => i >= 0)
+                        .map((_, i) => (watchedSchedule[i]?.day === wd.value ? i : -1))
+                        .filter((i) => i >= 0)
                       return (
                         <Box key={wd.value}>
                           <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                             {wd.label}
                           </Typography>
                           <Stack spacing={1}>
-                            {dayIndices.map((index: number) => (
+                            {dayIndices.map((index) => (
                               <Stack key={fields[index].id} direction="row" spacing={1} alignItems="flex-start">
                                 <Controller
                                   name={`schedule.${index}.start_time`}
                                   control={control}
-                                  render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                                  render={({ field }) => (
                                     <TimePickerField
                                       label="Início"
                                       value={field.value ?? ''}
                                       onChange={field.onChange}
                                       error={!!errors.schedule?.[index]?.start_time}
-                                      helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                                      helperText={(errors.schedule?.[index]?.start_time as any)?.message}
                                       size="small"
                                       sx={{ width: 130 }}
                                     />
@@ -384,14 +385,14 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                                 <Controller
                                   name={`schedule.${index}.end_time`}
                                   control={control}
-                                  render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                                  render={({ field }) => (
                                     <TimePickerField
                                       label="Término"
                                       value={field.value ?? ''}
                                       onChange={field.onChange}
                                       min={watchedSchedule[index]?.start_time || undefined}
                                       error={!!errors.schedule?.[index]?.end_time}
-                                      helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                                      helperText={(errors.schedule?.[index]?.end_time as any)?.message}
                                       size="small"
                                       sx={{ width: 130 }}
                                     />
@@ -443,13 +444,13 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                     <Controller
                       name={`schedule.${index}.start_time`}
                       control={control}
-                      render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                      render={({ field }) => (
                         <TimePickerField
                           label="Início"
                           value={field.value ?? ''}
                           onChange={field.onChange}
                           error={!!errors.schedule?.[index]?.start_time}
-                          helperText={(errors.schedule?.[index]?.start_time as { message?: string } | undefined)?.message}
+                          helperText={(errors.schedule?.[index]?.start_time as any)?.message}
                           size="small"
                           sx={{ width: 130 }}
                         />
@@ -458,14 +459,14 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
                     <Controller
                       name={`schedule.${index}.end_time`}
                       control={control}
-                      render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+                      render={({ field }) => (
                         <TimePickerField
                           label="Término"
                           value={field.value ?? ''}
                           onChange={field.onChange}
                           min={watchedSchedule[index]?.start_time || undefined}
                           error={!!errors.schedule?.[index]?.end_time}
-                          helperText={(errors.schedule?.[index]?.end_time as { message?: string } | undefined)?.message}
+                          helperText={(errors.schedule?.[index]?.end_time as any)?.message}
                           size="small"
                           sx={{ width: 130 }}
                         />
@@ -493,11 +494,11 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
               <Autocomplete
                 multiple
                 options={students}
-                getOptionLabel={(o: Student) => o.full_name}
-                isOptionEqualToValue={(o: Student, v: Student) => o.id === v.id}
-                value={students.filter((s: Student) => (field.value ?? []).includes(s.id))}
-                onChange={(_, newValue) => field.onChange((newValue as Student[]).map((s) => s.id))}
-                renderOption={(props, option: Student) => {
+                getOptionLabel={(o) => o.full_name}
+                isOptionEqualToValue={(o, v) => o.id === v.id}
+                value={students.filter((s) => (field.value ?? []).includes(s.id))}
+                onChange={(_, newValue) => field.onChange(newValue.map((s) => s.id))}
+                renderOption={(props, option) => {
                   const conflict = classInfoReady && !studentMatchesClass(option.availability, watchedSchedule)
                   return (
                     <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -523,14 +524,14 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             <Alert severity="warning">
               {conflictingStudents.length === 1
                 ? `${conflictingStudents[0].full_name} não marcou disponibilidade neste turno.`
-                : `${conflictingStudents.map((s: Student) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
+                : `${conflictingStudents.map((s) => s.full_name).join(', ')} não marcaram disponibilidade neste turno.`}
             </Alert>
           )}
           {levelMismatchStudents.length > 0 && (
             <Alert severity="warning">
               {levelMismatchStudents.length === 1
                 ? `${levelMismatchStudents[0].full_name} tem nível ${levelMismatchStudents[0].level}, diferente do(s) nível(is) da turma.`
-                : `${levelMismatchStudents.map((s: Student) => s.full_name).join(', ')} têm níveis diferentes dos desta turma.`}
+                : `${levelMismatchStudents.map((s) => s.full_name).join(', ')} têm níveis diferentes dos desta turma.`}
             </Alert>
           )}
         </Stack>

@@ -32,19 +32,19 @@ export function NpsResponsesTab() {
   const [templateFilter, setTemplateFilter] = useState<string>('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
-  const [page, setPage] = useState(1)
   const [viewResponse, setViewResponse] = useState<NpsResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<NpsResponse | null>(null)
+
+  useEffect(() => { setPage(1) }, [templateFilter, dateFrom, dateTo, sortBy, sortOrder])
 
   const { data: templates = [] } = useQuery({ queryKey: ['nps-templates'], queryFn: npsTemplatesApi.list })
   const templateName = (id: string | null) => templates.find((t) => t.id === id)?.name ?? '—'
 
-  useEffect(() => { setPage(1) }, [templateFilter, dateFrom, dateTo, sortBy, sortOrder])
-
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['nps-responses', templateFilter, dateFrom, dateTo, sortBy, sortOrder, page],
+    queryKey: ['nps-responses', templateFilter, dateFrom, dateTo, page, sortBy, sortOrder],
     queryFn: () => npsApi.list({
       template_id: templateFilter || undefined,
       date_from: dateFrom || undefined,
@@ -55,6 +55,7 @@ export function NpsResponsesTab() {
       page_size: 20,
     }),
   })
+
   const responses = data?.items ?? []
 
   const deleteMutation = useMutation({

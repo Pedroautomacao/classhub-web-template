@@ -40,20 +40,33 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
   const isEdit = !!teacher
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [userError, setUserError] = useState('')
 
+  // Create mode: only users not yet linked to a teacher
   const { data: availableUsers = [] } = useQuery({
     queryKey: ['teachers-available-users'],
     queryFn: teachersApi.availableUsers,
     enabled: open && !isEdit,
   })
 
+  // Edit mode: all active users not linked to other teachers + current linked user
+  const { data: allTeacherUsers = [] } = useQuery({
+    queryKey: ['teachers-all-users', teacher?.email],
+    queryFn: () => teachersApi.allTeacherUsers(teacher?.email),
+    enabled: open && isEdit,
+  })
+
+  const users = isEdit ? allTeacherUsers : availableUsers
+
   const { register, handleSubmit, reset, watch, setValue, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema) as any,
     defaultValues: { availability: [] },
   })
 
+  // Reset form when modal opens
   useEffect(() => {
     if (open) {
+      setUserError('')
       setSelectedUser(null)
       reset(teacher
         ? {
@@ -69,45 +82,67 @@ export function TeacherFormModal({ open, teacher, loading = false, onClose, onSu
     }
   }, [open, teacher, reset])
 
+  // Pre-select linked user once allTeacherUsers loads (edit mode)
+  useEffect(() => {
+    if (open && teacher && allTeacherUsers.length > 0) {
+      const linked = allTeacherUsers.find((u) => u.email === teacher.email)
+      if (linked) setSelectedUser(linked)
+    }
+  }, [open, teacher, allTeacherUsers])
+
   const handleUserSelect = (_: unknown, user: User | null) => {
     setSelectedUser(user)
+    setUserError('')
     if (user) {
       setValue('name', user.full_name)
       setValue('email', user.email ?? '')
       setValue('phone', digitsToE164(user.phone))
+    } else {
+      setValue('name', '')
+      setValue('email', '')
+      setValue('phone', '')
     }
   }
+
+  const handleFormSubmit = handleSubmit((values) => {
+    if (!selectedUser) {
+      setUserError('Selecione o usuário do professor')
+      return
+    }
+    onSubmit({ ...values, phone: e164ToDigits(values.phone) || undefined })
+  })
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>{isEdit ? 'Editar Professor' : 'Novo Professor'}</DialogTitle>
       <DialogContent sx={{ overflowX: 'hidden' }}>
-        <Stack component="form" id="teacher-form" onSubmit={handleSubmit((v) => onSubmit({ ...v, phone: e164ToDigits(v.phone) || undefined }))} spacing={2} sx={{ pt: 1 }}>
+        <Stack component="form" id="teacher-form" onSubmit={handleFormSubmit} spacing={2} sx={{ pt: 1 }}>
 
-          {!isEdit && (
-            <>
-              <Autocomplete
-                options={availableUsers}
-                getOptionLabel={(u) => `${u.full_name} (${u.email})`}
-                isOptionEqualToValue={(option, value) => option.email === value?.email}
-                value={selectedUser}
-                onChange={handleUserSelect}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Vincular usuário existente"
-                    helperText="Selecione um usuário com perfil Professor para preencher os dados automaticamente"
-                  />
-                )}
+          <Autocomplete
+            options={users}
+            getOptionLabel={(u) => `${u.full_name} (${u.email})`}
+            isOptionEqualToValue={(option, value) => option.email === value?.email}
+            value={selectedUser}
+            onChange={handleUserSelect}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Usuário *"
+                error={!!userError}
+                helperText={userError || (isEdit
+                  ? 'Alterar o usuário atualiza nome, e-mail e telefone do professor'
+                  : 'Selecione um usuário com perfil Professor')}
               />
-              {availableUsers.length === 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  Nenhum usuário com perfil Professor disponível para vincular.
-                </Typography>
-              )}
-              <Divider />
-            </>
+            )}
+          />
+
+          {!isEdit && users.length === 0 && (
+            <Typography variant="caption" color="text.secondary">
+              Nenhum usuário com perfil Professor disponível para vincular.
+            </Typography>
           )}
+
+          <Divider />
 
           <TextField
             label="Nome *"

@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Teacher, AvailabilityDay } from '@/types'
+import type { Teacher, AvailabilityDay, PaginatedResponse } from '@/types'
 
 export interface TeacherPayload {
   name: string
@@ -11,16 +11,16 @@ export interface TeacherPayload {
 }
 
 export interface TeacherListParams {
-  only_training?: boolean
+  is_training?: boolean
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
 }
 
 export const teachersApi = {
-  list: (params?: TeacherListParams | boolean) => {
-    const p: TeacherListParams = typeof params === 'boolean' ? { only_training: params } : (params ?? {})
-    return api.get<Teacher[]>('/teachers/', { params: p }).then((r) => r.data)
-  },
+  list: (params?: TeacherListParams) =>
+    api.get<PaginatedResponse<Teacher>>('/teachers/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<Teacher>(`/teachers/${id}`).then((r) => r.data),
@@ -45,4 +45,9 @@ export const teachersApi = {
 
   availableUsers: () =>
     api.get<import('@/types').User[]>('/teachers/available-users').then((r) => r.data),
+
+  allTeacherUsers: (includeEmail?: string) =>
+    api.get<import('@/types').User[]>('/teachers/all-teacher-users', {
+      params: includeEmail ? { include_email: includeEmail } : undefined,
+    }).then((r) => r.data),
 }

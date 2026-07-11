@@ -55,12 +55,13 @@ export function MethodologySection() {
               fontFamily: '"Hanken Grotesk", sans-serif',
               fontWeight: 700,
               fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
+              color: luminaPalette.neutral.text,
             }}
           >
             Nossa Metodologia
           </Typography>
           <Box sx={{ height: 6, width: 96, bgcolor: luminaPalette.primary.main, borderRadius: 999 }} />
-          <Typography sx={{ fontSize: { xs: 16, md: 18 }, color: 'text.secondary', maxWidth: 600 }}>
+          <Typography sx={{ fontSize: { xs: 16, md: 18 }, color: luminaPalette.neutral.textVariant, maxWidth: 600 }}>
             Um caminho estruturado para o seu sucesso acadêmico.
           </Typography>
         </Stack>

@@ -103,11 +103,12 @@ export function DashboardPage() {
     refetchInterval: 60_000,
   })
 
-  const { data: classes = [] } = useQuery({
+  const { data: classesData } = useQuery({
     queryKey: ['classes'],
-    queryFn: () => classesApi.list(),
+    queryFn: () => classesApi.list({ page_size: 9999 }),
     refetchInterval: 60_000,
   })
+  const classes = classesData?.items ?? []
 
   const [spNow, setSpNow] = useState(getSPNow)
   useEffect(() => {

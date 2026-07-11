@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Avatar, Box, Chip, Dialog, DialogContent, IconButton, Stack, Tab, Tabs, Tooltip, ToggleButtonGroup, ToggleButton, Typography } from '@mui/material'
@@ -11,10 +11,12 @@ import { HourClosingsAdminTab } from './components/HourClosingsAdminTab'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
-import { exportToXlsx } from '@/utils/export'
 import type { Teacher } from '@/types'
+
+type TrainingFilter = 'all' | 'active' | 'training'
 
 import { formatPhoneDisplay, whatsappUrl } from '@/utils/phone'
 
@@ -33,27 +35,44 @@ export function TeachersListPage() {
   const canViewRate = hasPermission(Permission.TEACHERS_VIEW_RATE)
 
   const initialTab = (location.state as any)?.tab as number | undefined
-  const initialTraining = (location.state as any)?.training as 'all' | 'active' | 'training' | undefined
+  const initialTraining = (location.state as any)?.training as TrainingFilter | undefined
   const [tab, setTab] = useState(initialTab ?? 0)
-  const [trainingFilter, setTrainingFilter] = useState<'all' | 'active' | 'training'>(initialTraining ?? 'all')
+  const [trainingFilter, setTrainingFilter] = useState<TrainingFilter>(initialTraining ?? 'all')
+  const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
-  const [isExporting, setIsExporting] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [selected, setSelected] = useState<Teacher | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null)
   const [previewAvatar, setPreviewAvatar] = useState<Teacher | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
-  const { data: teachers = [], isLoading, refetch } = useQuery({
-    queryKey: ['teachers', sortBy, sortOrder],
-    queryFn: () => teachersApi.list({ sort_by: sortBy, sort_order: sortOrder }),
+  useEffect(() => { setPage(1) }, [trainingFilter, sortBy, sortOrder])
+
+  const isTrainingParam = trainingFilter === 'all' ? undefined : trainingFilter === 'training' ? true : false
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['teachers', trainingFilter, page, sortBy, sortOrder],
+    queryFn: () => teachersApi.list({ is_training: isTrainingParam, sort_by: sortBy, sort_order: sortOrder, page, page_size: 20 }),
   })
 
-  const filteredTeachers = trainingFilter === 'active'
-    ? teachers.filter((t) => !t.is_training)
-    : trainingFilter === 'training'
-      ? teachers.filter((t) => t.is_training)
-      : teachers
+  const teachers = data?.items ?? []
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await teachersApi.list({ is_training: isTrainingParam, page: 1, page_size: 9999 })
+      exportToXlsx(all.items, [
+        { label: 'Nome', value: (t) => t.name },
+        { label: 'E-mail', value: (t) => t.email ?? '' },
+        { label: 'Telefone', value: (t) => t.phone ?? '' },
+        { label: 'Em treinamento', value: (t) => t.is_training ? 'Sim' : 'Não' },
+        ...(canViewRate ? [{ label: 'Valor/hora', value: (t: Teacher) => t.hourly_rate ?? '' }] : []),
+      ], 'professores')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const createMutation = useMutation({
     mutationFn: teachersApi.create,
@@ -72,22 +91,6 @@ export function TeachersListPage() {
     onSuccess: () => { refetch(); setDeleteTarget(null); show('Professor excluído.') },
     onError: (error) => show(getApiError(error, 'Erro ao excluir professor.'), 'error'),
   })
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await teachersApi.list()
-      exportToXlsx(rows, [
-        { label: 'Nome', value: (t) => t.name },
-        { label: 'E-mail', value: (t) => t.email ?? '' },
-        { label: 'Telefone', value: (t) => t.phone ?? '' },
-        { label: 'Em treinamento', value: (t) => t.is_training ? 'Sim' : 'Não' },
-        ...(canViewRate ? [{ label: 'Valor/hora', value: (t: Teacher) => t.hourly_rate ?? '' }] : []),
-      ], 'professores')
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   const columns: Column<Teacher>[] = [
     {
@@ -129,7 +132,7 @@ export function TeachersListPage() {
       ) : '—',
     },
     ...(canViewRate ? [{
-      key: 'hourly_rate' as const, label: 'Valor/hora', align: 'right' as const,
+      key: 'hourly_rate', label: 'Valor/hora', align: 'right' as const,
       render: (t: Teacher) => `R$ ${Number(t.hourly_rate).toFixed(2).replace('.', ',')}`,
     }] : []),
     {
@@ -219,9 +222,12 @@ export function TeachersListPage() {
           </ToggleButtonGroup>
           <DataTable
             columns={columns}
-            rows={filteredTeachers}
+            rows={teachers}
             loading={isLoading}
             emptyMessage="Nenhum professor cadastrado."
+            page={data?.page}
+            pageCount={data?.pages}
+            onPageChange={setPage}
             onExport={handleExport}
             isExporting={isExporting}
             sortableColumns={['name', 'email', 'phone', 'hourly_rate', 'is_training', 'created_at']}

@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { exportToXlsx } from '@/utils/export'
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
@@ -17,6 +16,7 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import { formatPhoneDisplay } from '@/utils/phone'
 import type { LevelingFormResponse, ContactStatus } from '@/types'
 
@@ -52,6 +52,7 @@ export function LevelingListPage() {
   const [statusFilter, setStatusFilter] = useState<ContactStatus | undefined>(initialContactStatus)
   const [nameFilter, setNameFilter] = useState('')
   const [phoneFilter, setPhoneFilter] = useState('')
+  const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
@@ -61,22 +62,50 @@ export function LevelingListPage() {
   const [levelResult, setLevelResult] = useState('')
   const [recommendation, setRecommendation] = useState('')
 
+  useEffect(() => { setPage(1) }, [statusFilter, nameFilter, phoneFilter, sortBy, sortOrder])
+
   const { data: settingsData } = useQuery({
     queryKey: ['settings'],
     queryFn: settingsApi.get,
   })
   const levelOptions = settingsData?.level_options ?? []
 
-  const { data: forms = [], isLoading, refetch } = useQuery({
-    queryKey: ['leveling', statusFilter, nameFilter, phoneFilter, sortBy, sortOrder],
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['leveling', statusFilter, nameFilter, phoneFilter, page, sortBy, sortOrder],
     queryFn: () => levelingApi.list({
       contact_status: statusFilter,
       name: nameFilter || undefined,
       phone: phoneFilter || undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
+      page,
+      page_size: 20,
     }),
   })
+
+  const forms = data?.items ?? []
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await levelingApi.list({
+        contact_status: statusFilter,
+        name: nameFilter || undefined,
+        phone: phoneFilter || undefined,
+        page: 1,
+        page_size: 9999,
+      })
+      exportToXlsx(all.items, [
+        { label: 'Nome', value: (l) => l.full_name },
+        { label: 'E-mail', value: (l) => l.email ?? '' },
+        { label: 'Telefone', value: (l) => l.phone ?? '' },
+        { label: 'Status', value: (l) => l.contact_status ?? '' },
+        { label: 'Data', value: (l) => l.created_at?.slice(0, 10) ?? '' },
+      ], 'nivelamentos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status, level_result, recommendation }: { id: string; status: ContactStatus; level_result?: string; recommendation?: string }) =>
@@ -88,28 +117,6 @@ export function LevelingListPage() {
     },
     onError: (error) => show(getApiError(error, 'Erro ao atualizar status.'), 'error'),
   })
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await levelingApi.list({
-        contact_status: statusFilter,
-        name: nameFilter || undefined,
-        phone: phoneFilter || undefined,
-      })
-      exportToXlsx(rows, [
-        { label: 'Nome', value: (f) => f.full_name },
-        { label: 'E-mail', value: (f) => f.email },
-        { label: 'Telefone', value: (f) => f.phone },
-        { label: 'Status', value: (f) => CONTACT_STATUS_LABELS[f.contact_status] },
-        { label: 'Nível', value: (f) => f.level_result ?? '' },
-        { label: 'Recomendação', value: (f) => f.recommendation ?? '' },
-        { label: 'Data', value: (f) => f.created_at },
-      ], 'nivelamentos')
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   const columns: Column<LevelingFormResponse>[] = [
     { key: 'full_name', label: 'Nome' },
@@ -210,6 +217,9 @@ export function LevelingListPage() {
         rows={forms}
         loading={isLoading}
         emptyMessage="Nenhum formulário encontrado."
+        page={data?.page}
+        pageCount={data?.pages}
+        onPageChange={setPage}
         onExport={handleExport}
         isExporting={isExporting}
         sortableColumns={['full_name', 'email', 'phone', 'created_at', 'contact_status']}

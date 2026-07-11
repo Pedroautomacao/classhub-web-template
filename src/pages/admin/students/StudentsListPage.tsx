@@ -1,5 +1,4 @@
-import { useState, useMemo } from 'react'
-import { exportToXlsx } from '@/utils/export'
+import { useState, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -19,6 +18,7 @@ import {
   MenuItem,
   Typography,
   Chip,
+  CircularProgress,
   Alert,
 } from '@mui/material'
 import { Edit, PersonOff, PersonAdd, Search, ClassOutlined, Warning, Error, Visibility } from '@mui/icons-material'
@@ -36,7 +36,9 @@ import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import type { Student, StudentStatus, Class } from '@/types'
+
 
 // ── Add to Class modal ────────────────────────────────────────────────────────
 
@@ -76,7 +78,9 @@ function AddToClassModal({ student, classes, onClose, onConfirm, loading }: AddT
             )}
             {classes.map((c) => {
               const conflict = !studentMatchesClass(student?.availability ?? null, c.schedule)
-              const levelConflict = student?.level && c.levels?.length && !c.levels.includes(student.level)
+              const levelConflict = student?.level
+                && c.levels?.length
+                && !c.levels.includes(student.level)
               return (
                 <MenuItem key={c.id} value={c.id}>
                   <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={1}>
@@ -138,10 +142,12 @@ export function StudentsListPage() {
 
   const initialStatus = (location.state as any)?.status as StatusFilter
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus ?? undefined)
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState<DateRangeValue | null>(null)
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
+  const [page, setPage] = useState(1)
   const [isExporting, setIsExporting] = useState(false)
   const [editTarget, setEditTarget] = useState<Student | null>(null)
   const [detailsTarget, setDetailsTarget] = useState<Student | null>(null)
@@ -149,29 +155,45 @@ export function StudentsListPage() {
   const [reactivateTarget, setReactivateTarget] = useState<Student | null>(null)
   const [addToClassTarget, setAddToClassTarget] = useState<Student | null>(null)
 
-  const apiStatusFilter = (statusFilter === 'without_class' || statusFilter === 'with_class') ? undefined : statusFilter
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 400)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => { setPage(1) }, [statusFilter, search, dateRange, sortBy, sortOrder])
+
+  const isClassFilter = statusFilter === 'with_class' || statusFilter === 'without_class'
+  const apiStatusFilter = isClassFilter ? undefined : (statusFilter as StudentStatus | undefined)
+
   const createdAfter = dateRange?.[0] ?? undefined
   const createdBefore = dateRange?.[1] ?? dateRange?.[0] ?? undefined
 
-  const { data: students = [], isLoading, refetch } = useQuery({
-    queryKey: ['students', apiStatusFilter, createdAfter, createdBefore, sortBy, sortOrder],
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['students', apiStatusFilter, isClassFilter ? null : search, isClassFilter ? 0 : page, createdAfter, createdBefore, sortBy, sortOrder],
     queryFn: () => studentsApi.list({
       status: apiStatusFilter,
-      created_after: createdAfter,
-      created_before: createdBefore,
-      sort_by: sortBy,
-      sort_order: sortOrder,
+      search: isClassFilter ? undefined : search || undefined,
+      created_after: isClassFilter ? undefined : createdAfter,
+      created_before: isClassFilter ? undefined : createdBefore,
+      sort_by: isClassFilter ? undefined : sortBy,
+      sort_order: isClassFilter ? undefined : sortOrder,
+      page: isClassFilter ? 1 : page,
+      page_size: isClassFilter ? 9999 : 20,
     }),
   })
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ['classes'],
-    queryFn: () => classesApi.list(),
+  const students = data?.items ?? []
+
+  const { data: classesData } = useQuery({
+    queryKey: ['classes', 'all'],
+    queryFn: () => classesApi.list({ page_size: 9999 }),
     staleTime: 30_000,
     enabled: !!addToClassTarget,
   })
+  const classes = classesData?.items ?? []
 
   const filtered = useMemo(() => {
+    if (!isClassFilter) return students
     let result = students
     if (statusFilter === 'without_class') {
       result = result.filter((s) => s.status === 'active' && (s.classes?.length ?? 0) === 0)
@@ -188,7 +210,28 @@ export function StudentsListPage() {
       )
     }
     return result
-  }, [students, statusFilter, search])
+  }, [students, statusFilter, search, isClassFilter])
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await studentsApi.list({
+        status: apiStatusFilter,
+        search: isClassFilter ? undefined : search || undefined,
+        page: 1,
+        page_size: 9999,
+      })
+      exportToXlsx(all.items, [
+        { label: 'Nome', value: (s) => s.full_name },
+        { label: 'E-mail', value: (s) => s.email ?? '' },
+        { label: 'Telefone', value: (s) => s.phone ?? '' },
+        { label: 'Status', value: (s) => s.status },
+        { label: 'Nível', value: (s) => s.level ?? '' },
+      ], 'alunos')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: StudentUpdate }) => studentsApi.update(id, data),
@@ -231,28 +274,6 @@ export function StudentsListPage() {
     },
     onError: (error) => show(getApiError(error, 'Erro ao adicionar à turma.'), 'error'),
   })
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await studentsApi.list({
-        status: apiStatusFilter,
-        created_after: createdAfter,
-        created_before: createdBefore,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-      })
-      exportToXlsx(rows, [
-        { label: 'Nome', value: (s) => s.full_name },
-        { label: 'E-mail', value: (s) => s.email ?? '' },
-        { label: 'Telefone', value: (s) => s.phone ?? '' },
-        { label: 'Status', value: (s) => s.status },
-        { label: 'Nível', value: (s) => s.level ?? '' },
-      ], 'alunos')
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   const columns: Column<Student>[] = [
     { key: 'full_name', label: 'Nome' },
@@ -359,18 +380,20 @@ export function StudentsListPage() {
         <TextField
           size="small"
           placeholder="Buscar por nome, e-mail ou CPF..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search fontSize="small" />
+                  {isFetching && searchInput
+                    ? <CircularProgress size={16} />
+                    : <Search fontSize="small" />}
                 </InputAdornment>
               ),
             },
           }}
-          sx={{ minWidth: 280 }}
+          sx={{ minWidth: 340 }}
         />
         <DateRangePickerField
           size="small"
@@ -398,9 +421,12 @@ export function StudentsListPage() {
         rows={filtered}
         loading={isLoading}
         emptyMessage="Nenhum aluno encontrado."
+        page={isClassFilter ? undefined : data?.page}
+        pageCount={isClassFilter ? undefined : data?.pages}
+        onPageChange={isClassFilter ? undefined : setPage}
         onExport={handleExport}
         isExporting={isExporting}
-        sortableColumns={['full_name', 'level', 'status', 'created_at']}
+        sortableColumns={isClassFilter ? [] : ['full_name', 'level', 'status', 'created_at']}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}

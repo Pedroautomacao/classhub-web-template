@@ -1,5 +1,5 @@
 import api from './axios'
-import type { PaymentRow, PaymentUpdate, PaymentMethod } from '@/types'
+import type { PaginatedResponse, PaymentRow, PaymentUpdate, PaymentMethod } from '@/types'
 
 export interface PaymentListParams {
   search?: string
@@ -8,11 +8,13 @@ export interface PaymentListParams {
   payment_day?: number
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
 }
 
 export const paymentsApi = {
   list: (params?: PaymentListParams) =>
-    api.get<PaymentRow[]>('/payments/', { params }).then((r) => r.data),
+    api.get<PaginatedResponse<PaymentRow>>('/payments/', { params }).then((r) => r.data),
 
   update: (studentId: string, data: PaymentUpdate) =>
     api.patch<PaymentRow>(`/payments/${studentId}`, data).then((r) => r.data),

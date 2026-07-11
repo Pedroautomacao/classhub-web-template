@@ -8,7 +8,7 @@ export interface Contract {
   student: { id: string; full_name: string }
   plan_id: string | null
   start_date: string
-  end_date: string
+  end_date: string | null
   grace_period_days: number
   status: ContractStatus
   created_at: string

@@ -1,5 +1,11 @@
 import api from './axios'
-import type { NpsQuestion, NpsResponse, NpsResponseCreate, NpsTemplate, PaginatedResponse } from '@/types'
+import type {
+  NpsQuestion,
+  NpsResponse,
+  NpsResponseCreate,
+  NpsTemplate,
+  PaginatedResponse,
+} from '@/types'
 
 export interface NpsTemplateCreate {
   name: string

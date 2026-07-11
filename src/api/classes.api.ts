@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Class } from '@/types'
+import type { Class, PaginatedResponse } from '@/types'
 
 export interface ClassSchedulePayload {
   day: string
@@ -28,11 +28,13 @@ export interface ClassListParams {
   frequency?: string
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  page?: number
+  page_size?: number
 }
 
 export const classesApi = {
   list: (params?: ClassListParams) =>
-    api.get<Class[]>('/classes/', { params }).then((r) => r.data),
+    api.get<PaginatedResponse<Class>>('/classes/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<Class>(`/classes/${id}`).then((r) => r.data),

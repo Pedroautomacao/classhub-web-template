@@ -19,8 +19,8 @@ import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { fileToBase64 } from '@/api/files.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
-import { e164ToDigits } from '@/utils/phone'
 import { getApiError } from '@/utils/errors'
+import { e164ToDigits } from '@/utils/phone'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Nome obrigatório'),
@@ -45,15 +45,23 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX — Valor integral do plano',
 }
 
+function maskCpf(value: string) {
+  return value.replace(/\D/g, '').slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
 export function EnrollmentPage() {
   const navigate = useNavigate()
   const { show } = useSnackbarStore()
-  const { data: plans = [] } = useQuery({ queryKey: ['plans'], queryFn: () => plansApi.list(true) })
+  const { data: plansData } = useQuery({ queryKey: ['plans'], queryFn: () => plansApi.list({ only_active: true }) })
+  const plans = plansData?.items ?? []
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [contractFile, setContractFile] = useState<File | null>(null)
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { grace_period_days: 0, contract_accepted: true, availability: [] },
   })
@@ -148,7 +156,16 @@ export function EnrollmentPage() {
               <TextField label="Instagram" fullWidth {...register('instagram')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="CPF *" fullWidth error={!!errors.cpf} helperText={errors.cpf?.message} {...register('cpf')} />
+              <TextField
+                label="CPF *"
+                fullWidth
+                placeholder="000.000.000-00"
+                inputProps={{ inputMode: 'numeric' }}
+                error={!!errors.cpf}
+                helperText={errors.cpf?.message}
+                {...register('cpf')}
+                onChange={(e) => setValue('cpf', maskCpf(e.target.value))}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
@@ -255,7 +272,7 @@ export function EnrollmentPage() {
 
           <FormControlLabel
             control={<Checkbox defaultChecked {...register('contract_accepted')} />}
-            label="Declaro que recebi, li e aceito os termos de contrato."
+            label="Aluno aceitou os termos do contrato"
           />
           {errors.contract_accepted && (
             <Typography variant="caption" color="error">{errors.contract_accepted.message}</Typography>

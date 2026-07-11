@@ -76,11 +76,12 @@ interface Props {
 }
 
 export function StudentDetailsModal({ student, onClose }: Props) {
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
+  const { data: contractsData, isLoading: contractsLoading } = useQuery({
     queryKey: ['contracts', 'by-student', student?.id],
-    queryFn: () => contractsApi.list({ student_id: student!.id }),
+    queryFn: () => contractsApi.list({ student_id: student!.id, page_size: 50 }),
     enabled: !!student,
   })
+  const contracts = contractsData?.items ?? []
 
   if (!student) return null
 

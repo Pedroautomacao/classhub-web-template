@@ -221,8 +221,7 @@ export function LevelingFormPage() {
             Nivelamento
           </Typography>
           <Typography color="text.secondary" textAlign="center" mt={1}>
-            Preencha os dados abaixo e nossa equipe entrará em contato para
-            agendar sua aula de nivelamento gratuita.
+            Preencha os dados abaixo e nossa equipe entrará em contato para os passos seguintes.
           </Typography>
         </Stack>
 

@@ -89,74 +89,74 @@ export function DataTable<T extends { id: string }>({
         </Box>
       )}
       <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-      <Table size="small">
-        <TableHead>
-          <TableRow sx={{ bgcolor: 'action.hover' }}>
-            {columns.map((col) => {
-              const sortable = isSortable(col.key)
-              const active = sortable && sortBy === col.key
-              return (
-                <TableCell
-                  key={col.key}
-                  align={col.align ?? 'left'}
-                  sortDirection={active ? sortOrder : false}
-                  sx={{ fontWeight: 700, width: col.width }}
-                >
-                  {sortable ? (
-                    <TableSortLabel
-                      active={active}
-                      direction={active ? sortOrder : 'asc'}
-                      onClick={() => handleSort(col.key)}
-                    >
-                      {col.label}
-                    </TableSortLabel>
-                  ) : (
-                    col.label
-                  )}
-                </TableCell>
-              )
-            })}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {loading ? (
-            Array.from({ length: skeletonRows }).map((_, i) => (
-              <TableRow key={i}>
-                {columns.map((col) => (
-                  <TableCell key={col.key}>
-                    <Skeleton variant="text" />
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ bgcolor: 'action.hover' }}>
+              {columns.map((col) => {
+                const sortable = isSortable(col.key)
+                const active = sortable && sortBy === col.key
+                return (
+                  <TableCell
+                    key={col.key}
+                    align={col.align ?? 'left'}
+                    sortDirection={active ? sortOrder : false}
+                    sx={{ fontWeight: 700, width: col.width }}
+                  >
+                    {sortable ? (
+                      <TableSortLabel
+                        active={active}
+                        direction={active ? sortOrder : 'asc'}
+                        onClick={() => handleSort(col.key)}
+                      >
+                        {col.label}
+                      </TableSortLabel>
+                    ) : (
+                      col.label
+                    )}
                   </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={columns.length}>
-                <Box sx={{ py: 4, textAlign: 'center' }}>
-                  <Typography color="text.secondary">{emptyMessage}</Typography>
-                </Box>
-              </TableCell>
+                )
+              })}
             </TableRow>
-          ) : (
-            rows.map((row) => (
-              <TableRow
-                key={row.id}
-                hover
-                sx={{ '&:last-child td': { border: 0 } }}
-              >
-                {columns.map((col) => (
-                  <TableCell key={col.key} align={col.align ?? 'left'}>
-                    {col.render
-                      ? col.render(row)
-                      : String((row as Record<string, unknown>)[col.key] ?? '—')}
-                  </TableCell>
-                ))}
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: skeletonRows }).map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((col) => (
+                    <TableCell key={col.key}>
+                      <Skeleton variant="text" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length}>
+                  <Box sx={{ py: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">{emptyMessage}</Typography>
+                  </Box>
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            ) : (
+              rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  sx={{ '&:last-child td': { border: 0 } }}
+                >
+                  {columns.map((col) => (
+                    <TableCell key={col.key} align={col.align ?? 'left'}>
+                      {col.render
+                        ? col.render(row)
+                        : String((row as Record<string, unknown>)[col.key] ?? '—')}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {pageCount && pageCount > 1 && onPageChange && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>

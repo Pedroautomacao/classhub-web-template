@@ -13,7 +13,7 @@ export function TeacherPortalPage() {
     <Box>
       <PageHeader
         title="Portal do Professor"
-        subtitle="Suas turmas, folha de ponto e perfil"
+        subtitle="Suas turmas, fechamentos de horas e perfil"
         helpContent={{
           what: 'O Portal do Professor é o espaço exclusivo para que cada professor acompanhe suas turmas, registre as aulas realizadas e mantenha seu perfil atualizado. O fluxo de fechamento de horas é dividido em duas sub-abas: "Folha de ponto" (registros individuais de aulas que viram rascunhos) e "Envios" (lotes submetidos para aprovação da administração). O acesso ao portal exige que o usuário logado esteja vinculado a um cadastro de professor.',
           actions: [

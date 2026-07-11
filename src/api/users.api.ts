@@ -1,5 +1,5 @@
 import api from './axios'
-import type { User } from '@/types'
+import type { User, PaginatedResponse } from '@/types'
 
 export interface UserCreatePayload {
   full_name: string
@@ -21,8 +21,8 @@ export interface UserUpdatePayload {
 }
 
 export const usersApi = {
-  list: (only_active = false) =>
-    api.get<User[]>('/users/', { params: { only_active } }).then((r) => r.data),
+  list: (params?: { only_active?: boolean; page?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<User>>('/users/', { params }).then((r) => r.data),
 
   get: (id: string) =>
     api.get<User>(`/users/${id}`).then((r) => r.data),

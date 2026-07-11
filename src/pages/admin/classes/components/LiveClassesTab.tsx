@@ -215,15 +215,17 @@ function LiveClassCard({ cls, teacherName, liveEntry }: { cls: Class; teacherNam
 }
 
 export function LiveClassesTab() {
-  const { data: classes = [], isLoading: loadingClasses } = useQuery({
+  const { data: classesData, isLoading: loadingClasses } = useQuery({
     queryKey: ['classes'],
-    queryFn: () => classesApi.list(),
+    queryFn: () => classesApi.list({ page_size: 9999 }),
   })
+  const classes = classesData?.items ?? []
 
-  const { data: teachers = [] } = useQuery({
+  const { data: teachersData } = useQuery({
     queryKey: ['teachers'],
-    queryFn: () => teachersApi.list(),
+    queryFn: () => teachersApi.list({ page_size: 9999 }),
   })
+  const teachers = teachersData?.items ?? []
 
   const [now, setNow] = useState(getSPTime)
 

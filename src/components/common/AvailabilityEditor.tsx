@@ -129,7 +129,7 @@ function AvailabilityDayRow({ dayIndex, control, register: _register, watch, err
             <Controller
               name={`availability.${dayIndex}.slots.${slotIndex}.start`}
               control={control}
-              render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+              render={({ field }) => (
                 <TimePickerField
                   label="Início"
                   value={field.value ?? ''}
@@ -144,7 +144,7 @@ function AvailabilityDayRow({ dayIndex, control, register: _register, watch, err
             <Controller
               name={`availability.${dayIndex}.slots.${slotIndex}.end`}
               control={control}
-              render={({ field }: { field: { value: string; onChange: (v: string) => void } }) => (
+              render={({ field }) => (
                 <TimePickerField
                   label="Fim"
                   value={field.value ?? ''}

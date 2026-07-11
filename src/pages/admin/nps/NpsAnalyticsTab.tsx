@@ -12,6 +12,8 @@ import { computeNps, firstNpsQuestion } from '@/utils/nps'
 import { QuestionAnalyticsCard } from './analytics/registry'
 import type { NpsResponse } from '@/types'
 
+const ALL_PAGE = 5000
+
 function npsScoreOf(r: NpsResponse): number | null {
   const q = firstNpsQuestion(r.form_snapshot)
   if (!q) return null
@@ -43,7 +45,7 @@ export function NpsAnalyticsTab() {
       template_id: templateId,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
-      page: 1, page_size: 5000,
+      page: 1, page_size: ALL_PAGE,
     }),
     enabled: !!templateId,
   })
@@ -55,15 +57,14 @@ export function NpsAnalyticsTab() {
     queryFn: () => npsApi.list({
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
-      page: 1, page_size: 5000,
+      page: 1, page_size: ALL_PAGE,
     }),
   })
-  const allResponses = useMemo(() => allData?.items ?? [], [allData])
 
   // Linha de NPS por mês (cruzando templates)
   const trend = useMemo(() => {
     const byMonth = new Map<string, number[]>()
-    for (const r of allResponses) {
+    for (const r of allData?.items ?? []) {
       const score = npsScoreOf(r)
       if (score === null) continue
       const key = r.created_at.slice(0, 7) // YYYY-MM
@@ -76,7 +77,7 @@ export function NpsAnalyticsTab() {
       labels: months.map((m) => dayjs(`${m}-01`).format('MMM/YY')),
       values: months.map((m) => computeNps(byMonth.get(m)!) ?? 0),
     }
-  }, [allResponses])
+  }, [allData])
 
   // NPS geral da campanha selecionada (resumo)
   const overall = useMemo(() => {

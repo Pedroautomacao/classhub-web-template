@@ -9,10 +9,10 @@ import { UserFormModal } from './components/UserFormModal'
 import { usersApi, type UserCreatePayload } from '@/api/users.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
+import { exportToXlsx } from '@/utils/export'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
 import { useAuthStore } from '@/store/auth.store'
-import { exportToXlsx } from '@/utils/export'
 import type { User, UserRole } from '@/types'
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -32,15 +32,32 @@ export function UsersListPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [selected, setSelected] = useState<User | null>(null)
-  const [isExporting, setIsExporting] = useState(false)
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null)
   const [reactivateTarget, setReactivateTarget] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [page, setPage] = useState(1)
+  const [isExporting, setIsExporting] = useState(false)
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersApi.list(),
+  const { data, isLoading } = useQuery({
+    queryKey: ['users', page],
+    queryFn: () => usersApi.list({ page, page_size: 20 }),
   })
+
+  const users = data?.items ?? []
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const all = await usersApi.list({ page: 1, page_size: 9999 })
+      exportToXlsx(all.items, [
+        { label: 'Nome', value: (u) => u.full_name },
+        { label: 'E-mail', value: (u) => u.email ?? '' },
+        { label: 'Role', value: (u) => u.role },
+      ], 'usuarios')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const createMutation = useMutation({
     mutationFn: usersApi.create,
@@ -81,20 +98,6 @@ export function UsersListPage() {
     } else {
       const payload: UserCreatePayload = { full_name: values.full_name, username: values.username, email: values.email, phone: values.phone || undefined, password: values.password ?? '', role: values.role, permissions }
       createMutation.mutate(payload)
-    }
-  }
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      const rows = await usersApi.list()
-      exportToXlsx(rows, [
-        { label: 'Nome', value: (u) => u.full_name ?? '' },
-        { label: 'E-mail', value: (u) => u.email ?? '' },
-        { label: 'Role', value: (u) => u.role },
-      ], 'usuarios')
-    } finally {
-      setIsExporting(false)
     }
   }
 
@@ -170,7 +173,17 @@ export function UsersListPage() {
           flow: 'Admin principal cria usuários aqui → Cada membro da equipe acessa com suas credenciais → Ações limitadas pelas permissões configuradas.',
         }}
       />
-      <DataTable columns={columns} rows={users} loading={isLoading} emptyMessage="Nenhum usuário encontrado." onExport={handleExport} isExporting={isExporting} />
+      <DataTable
+        columns={columns}
+        rows={users}
+        loading={isLoading}
+        emptyMessage="Nenhum usuário encontrado."
+        page={data?.page}
+        pageCount={data?.pages}
+        onPageChange={setPage}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
       <UserFormModal
         open={formOpen} user={selected} loading={createMutation.isPending || updateMutation.isPending}
         onClose={() => { setFormOpen(false); setSelected(null) }}

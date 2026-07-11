@@ -204,7 +204,8 @@ export function HourClosingsAdminTab() {
   const [reviewTarget, setReviewTarget] = useState<HourClosing | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const { data: teachers = [] } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list() })
+  const { data: teachersData } = useQuery({ queryKey: ['teachers'], queryFn: () => teachersApi.list({ page_size: 200 }) })
+  const teachers = teachersData?.items ?? []
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['admin-hour-closings', selectedTeacher?.id, dateFrom, dateTo, statusFilter],
