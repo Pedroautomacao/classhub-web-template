@@ -54,9 +54,11 @@ const schema = z
     availability: z.array(availabilityDaySchema).optional(),
     // Quando true, o aluno optou por NÃO renovar a matrícula.
     opt_out: z.boolean().optional(),
-    // Campos de renovação — validados condicionalmente abaixo.
+    // Campos de renovação — validados condicionalmente abaixo. Aceitam string
+    // vazia (estado inicial dos selects) para não falharem o parse quando o
+    // aluno opta por não renovar e os campos ficam ocultos/em branco.
     plan_id: z.string().optional(),
-    payment_method: z.enum(['pix', 'credit_card']).optional(),
+    payment_method: z.string().optional(),
     start_date: z.string().optional(),
     contract_accepted: z.boolean().optional(),
   })
@@ -67,7 +69,7 @@ const schema = z
     if (!data.plan_id) {
       ctx.addIssue({ code: 'custom', message: 'Selecione um plano', path: ['plan_id'] })
     }
-    if (!data.payment_method) {
+    if (data.payment_method !== 'pix' && data.payment_method !== 'credit_card') {
       ctx.addIssue({ code: 'custom', message: 'Selecione a forma de pagamento', path: ['payment_method'] })
     }
     if (!data.start_date) {
