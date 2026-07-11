@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Box, Chip, IconButton, Stack, Tooltip, ToggleButtonGroup, ToggleButton,
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
@@ -43,7 +43,6 @@ const CONTACT_STATUS_COLORS: Record<ContactStatus, 'default' | 'warning' | 'succ
 }
 
 export function LevelingListPage() {
-  const qc = useQueryClient()
   const location = useLocation()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
@@ -68,7 +67,7 @@ export function LevelingListPage() {
   })
   const levelOptions = settingsData?.level_options ?? []
 
-  const { data: forms = [], isLoading } = useQuery({
+  const { data: forms = [], isLoading, refetch } = useQuery({
     queryKey: ['leveling', statusFilter, nameFilter, phoneFilter, sortBy, sortOrder],
     queryFn: () => levelingApi.list({
       contact_status: statusFilter,
@@ -83,7 +82,7 @@ export function LevelingListPage() {
     mutationFn: ({ id, status, level_result, recommendation }: { id: string; status: ContactStatus; level_result?: string; recommendation?: string }) =>
       levelingApi.updateStatus(id, { contact_status: status, level_result: level_result || undefined, recommendation: recommendation || undefined }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['leveling'] })
+      refetch()
       setEditStatus(null)
       show('Status atualizado!')
     },

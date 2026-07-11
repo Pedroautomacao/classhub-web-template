@@ -85,7 +85,7 @@ export function PaymentsListPage() {
     staleTime: 60_000,
   })
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, refetch } = useQuery({
     queryKey: ['payments', search, planFilter, methodFilter, dayFilter, sortBy, sortOrder],
     queryFn: () => paymentsApi.list({
       search: search || undefined,
@@ -101,7 +101,7 @@ export function PaymentsListPage() {
     mutationFn: ({ studentId, payload }: { studentId: string; payload: { plan_id?: string | null; payment_method?: PaymentMethod | null; payment_day?: number | null } }) =>
       paymentsApi.update(studentId, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['payments'] })
+      refetch()
       qc.invalidateQueries({ queryKey: ['students'] })
       setEditTarget(null)
       show('Pagamento atualizado!')

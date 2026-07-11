@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Avatar, Box, Chip, Dialog, DialogContent, IconButton, Stack, Tab, Tabs, Tooltip, ToggleButtonGroup, ToggleButton, Typography } from '@mui/material'
 import { Edit, Delete, WhatsApp } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -24,7 +24,6 @@ function openWhatsApp(phone: string) {
 }
 
 export function TeachersListPage() {
-  const qc = useQueryClient()
   const location = useLocation()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
@@ -45,7 +44,7 @@ export function TeachersListPage() {
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null)
   const [previewAvatar, setPreviewAvatar] = useState<Teacher | null>(null)
 
-  const { data: teachers = [], isLoading } = useQuery({
+  const { data: teachers = [], isLoading, refetch } = useQuery({
     queryKey: ['teachers', sortBy, sortOrder],
     queryFn: () => teachersApi.list({ sort_by: sortBy, sort_order: sortOrder }),
   })
@@ -58,19 +57,19 @@ export function TeachersListPage() {
 
   const createMutation = useMutation({
     mutationFn: teachersApi.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teachers'] }); setFormOpen(false); show('Professor criado!') },
+    onSuccess: () => { refetch(); setFormOpen(false); show('Professor criado!') },
     onError: (error) => show(getApiError(error, 'Erro ao criar professor.'), 'error'),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof teachersApi.update>[1] }) => teachersApi.update(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teachers'] }); setFormOpen(false); setSelected(null); show('Professor atualizado!') },
+    onSuccess: () => { refetch(); setFormOpen(false); setSelected(null); show('Professor atualizado!') },
     onError: (error) => show(getApiError(error, 'Erro ao atualizar professor.'), 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: teachersApi.remove,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['teachers'] }); setDeleteTarget(null); show('Professor excluído.') },
+    onSuccess: () => { refetch(); setDeleteTarget(null); show('Professor excluído.') },
     onError: (error) => show(getApiError(error, 'Erro ao excluir professor.'), 'error'),
   })
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
   FormControl, IconButton, InputLabel, MenuItem, Select, Stack, Tooltip, Typography,
@@ -25,7 +25,6 @@ function firstNpsScore(r: NpsResponse): number | null {
 }
 
 export function NpsResponsesTab() {
-  const qc = useQueryClient()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
   const canDelete = hasPermission(Permission.NPS_DELETE)
@@ -44,7 +43,7 @@ export function NpsResponsesTab() {
 
   useEffect(() => { setPage(1) }, [templateFilter, dateFrom, dateTo, sortBy, sortOrder])
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['nps-responses', templateFilter, dateFrom, dateTo, sortBy, sortOrder, page],
     queryFn: () => npsApi.list({
       template_id: templateFilter || undefined,
@@ -61,7 +60,7 @@ export function NpsResponsesTab() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => npsApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['nps-responses'] })
+      refetch()
       setDeleteTarget(null)
       show('Resposta excluída.')
     },

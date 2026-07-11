@@ -153,7 +153,7 @@ export function StudentsListPage() {
   const createdAfter = dateRange?.[0] ?? undefined
   const createdBefore = dateRange?.[1] ?? dateRange?.[0] ?? undefined
 
-  const { data: students = [], isLoading } = useQuery({
+  const { data: students = [], isLoading, refetch } = useQuery({
     queryKey: ['students', apiStatusFilter, createdAfter, createdBefore, sortBy, sortOrder],
     queryFn: () => studentsApi.list({
       status: apiStatusFilter,
@@ -193,7 +193,7 @@ export function StudentsListPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: StudentUpdate }) => studentsApi.update(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['students'] })
+      refetch()
       setEditTarget(null)
       show('Aluno atualizado!')
     },
@@ -203,7 +203,7 @@ export function StudentsListPage() {
   const deactivateMutation = useMutation({
     mutationFn: studentsApi.deactivate,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['students'] })
+      refetch()
       setDeactivateTarget(null)
       show('Aluno inativado.')
     },
@@ -213,7 +213,7 @@ export function StudentsListPage() {
   const reactivateMutation = useMutation({
     mutationFn: studentsApi.reactivate,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['students'] })
+      refetch()
       setReactivateTarget(null)
       show('Aluno reativado!')
     },
@@ -225,6 +225,7 @@ export function StudentsListPage() {
       classesApi.addStudent(classId, studentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['classes'] })
+      refetch()
       setAddToClassTarget(null)
       show('Aluno adicionado à turma!')
     },

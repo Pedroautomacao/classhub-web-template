@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Box, Chip, IconButton, Stack, Tab, Tabs, Tooltip, Typography,
   TextField, MenuItem, Autocomplete,
@@ -34,7 +34,6 @@ function classTypeLabel(t: string) {
 }
 
 export function ClassesListPage() {
-  const qc = useQueryClient()
   const location = useLocation()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
@@ -61,7 +60,7 @@ export function ClassesListPage() {
     queryFn: () => teachersApi.list(),
   })
 
-  const { data: classes = [], isLoading } = useQuery({
+  const { data: classes = [], isLoading, refetch } = useQuery({
     queryKey: ['classes', filterTeacher?.id, filterName, filterDay, filterType, filterFrequency, sortBy, sortOrder],
     queryFn: () => classesApi.list({
       teacher_id: filterTeacher?.id || undefined,
@@ -76,19 +75,19 @@ export function ClassesListPage() {
 
   const createMutation = useMutation({
     mutationFn: classesApi.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['classes'] }); setFormOpen(false); show('Turma criada!') },
+    onSuccess: () => { refetch(); setFormOpen(false); show('Turma criada!') },
     onError: (error) => show(getApiError(error, 'Erro ao criar turma.'), 'error'),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ClassPayload> }) => classesApi.update(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['classes'] }); setFormOpen(false); setSelected(null); show('Turma atualizada!') },
+    onSuccess: () => { refetch(); setFormOpen(false); setSelected(null); show('Turma atualizada!') },
     onError: (error) => show(getApiError(error, 'Erro ao atualizar turma.'), 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: classesApi.remove,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['classes'] }); setDeleteTarget(null); show('Turma excluída.') },
+    onSuccess: () => { refetch(); setDeleteTarget(null); show('Turma excluída.') },
     onError: (error) => show(getApiError(error, 'Erro ao excluir turma.'), 'error'),
   })
 

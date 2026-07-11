@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { exportToXlsx } from '@/utils/export'
 import { useLocation } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Box, Chip, IconButton, Stack, Tooltip, ToggleButtonGroup, ToggleButton,
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography,
@@ -40,7 +40,6 @@ function isExpiringSoon(end_date: string) {
 }
 
 export function ContractsListPage() {
-  const qc = useQueryClient()
   const location = useLocation()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
@@ -75,7 +74,7 @@ export function ContractsListPage() {
     ...(search ? { search } : {}),
   }
 
-  const { data: contracts = [], isLoading, isFetching } = useQuery({
+  const { data: contracts = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['contracts', statusFilter, expiringSoonFilter, dueDateFrom, dueDateTo, search, sortBy, sortOrder],
     queryFn: () => contractsApi.list({
       ...filterParams,
@@ -87,7 +86,7 @@ export function ContractsListPage() {
   const cancelMutation = useMutation({
     mutationFn: contractsApi.cancel,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contracts'] })
+      refetch()
       setCancelTarget(null)
       show('Contrato cancelado.')
     },
@@ -98,7 +97,7 @@ export function ContractsListPage() {
     mutationFn: (data: { reference_id: string; file_name: string; content: string }) =>
       filesApi.create({ ...data, type: 'contract' }),
     onSuccess: (newFile) => {
-      qc.invalidateQueries({ queryKey: ['contracts'] })
+      refetch()
       setFileContract((prev) => prev ? { ...prev, file: newFile } : prev)
       show('Documento anexado com sucesso!')
     },
@@ -109,7 +108,7 @@ export function ContractsListPage() {
     mutationFn: ({ fileId, data }: { fileId: string; data: { file_name: string; content: string } }) =>
       filesApi.replace(fileId, data),
     onSuccess: (updatedFile) => {
-      qc.invalidateQueries({ queryKey: ['contracts'] })
+      refetch()
       setFileContract((prev) => prev ? { ...prev, file: updatedFile } : prev)
       show('Documento substituído com sucesso!')
     },
@@ -119,7 +118,7 @@ export function ContractsListPage() {
   const deleteFileMutation = useMutation({
     mutationFn: (fileId: string) => filesApi.delete(fileId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contracts'] })
+      refetch()
       setDeleteFileTarget(null)
       setFileContract((prev) => prev ? { ...prev, file: null } : prev)
       show('Documento excluído.')

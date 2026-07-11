@@ -66,6 +66,9 @@ const schema = z
     // Ao não renovar, os campos de plano/contrato não são exigidos.
     if (data.opt_out) return
 
+    if (!data.availability || data.availability.length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'Informe sua disponibilidade de horários', path: ['availability'] })
+    }
     if (!data.plan_id) {
       ctx.addIssue({ code: 'custom', message: 'Selecione um plano', path: ['plan_id'] })
     }
@@ -349,7 +352,14 @@ export function ReEnrollmentFormPage() {
                 <Divider />
 
                 {/* Disponibilidade — pré-preenchida com o que o aluno já tem cadastrado */}
-                <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
+                <Box>
+                  <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
+                  {!wantsToOptOut && typeof errors.availability?.message === 'string' && (
+                    <Typography variant="caption" color="error">
+                      {errors.availability.message}
+                    </Typography>
+                  )}
+                </Box>
 
                 <Divider />
 

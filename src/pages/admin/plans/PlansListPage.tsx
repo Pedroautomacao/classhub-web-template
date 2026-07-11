@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Box, IconButton, Switch, Tooltip, Stack } from '@mui/material'
 import { Edit, Delete } from '@mui/icons-material'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -15,7 +15,6 @@ import { exportToXlsx } from '@/utils/export'
 import type { Plan } from '@/types'
 
 export function PlansListPage() {
-  const qc = useQueryClient()
   const { show } = useSnackbarStore()
   const { hasPermission } = usePermission()
   const canWrite = hasPermission(Permission.PLANS_WRITE)
@@ -29,7 +28,7 @@ export function PlansListPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [isExporting, setIsExporting] = useState(false)
 
-  const { data: plans = [], isLoading } = useQuery({
+  const { data: plans = [], isLoading, refetch } = useQuery({
     queryKey: ['plans', sortBy, sortOrder],
     queryFn: () => plansApi.list({ sort_by: sortBy, sort_order: sortOrder }),
   })
@@ -37,7 +36,7 @@ export function PlansListPage() {
   const createMutation = useMutation({
     mutationFn: plansApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      refetch()
       setFormOpen(false)
       show('Plano criado com sucesso!')
     },
@@ -48,7 +47,7 @@ export function PlansListPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Plan> }) =>
       plansApi.update(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      refetch()
       setFormOpen(false)
       setSelected(null)
       show('Plano atualizado!')
@@ -59,7 +58,7 @@ export function PlansListPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => plansApi.remove(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      refetch()
       setDeleteTarget(null)
       show('Plano excluído.')
     },
