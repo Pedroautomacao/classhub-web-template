@@ -21,6 +21,7 @@ import {
   HourglassEmpty,
   FiberManualRecord,
   Pending,
+  HowToReg,
 } from '@mui/icons-material'
 import { dashboardApi } from '@/api/dashboard.api'
 import { classesApi } from '@/api/classes.api'
@@ -299,6 +300,33 @@ export function DashboardPage() {
             highlight={(data?.leveling_pending ?? 0) > 0}
             loading={isLoading}
             onClick={go('/admin/leveling', { contact_status: 'analyze' })}
+          />
+        </Grid>
+
+        {/* Matrículas */}
+        <Grid size={{ xs: 12 }}>
+          <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.8} mt={1}>
+            Matrículas
+          </Typography>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <KpiCard
+            label="Matrículas hoje"
+            value={data?.enrollment_submissions_today}
+            icon={<HowToReg color="primary" />}
+            loading={isLoading}
+            onClick={go('/admin/enrollment')}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <KpiCard
+            label="Rematrículas hoje"
+            value={data?.re_enrollment_submissions_today}
+            icon={<HowToReg color="success" />}
+            color="success.main"
+            loading={isLoading}
+            onClick={go('/admin/re-enrollment')}
           />
         </Grid>
 

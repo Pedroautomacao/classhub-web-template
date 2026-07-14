@@ -9,4 +9,6 @@ export interface DashboardSummary {
   contracts_expiring_soon: number
   leveling_pending: number
   hour_closings_pending: number
+  enrollment_submissions_today: number
+  re_enrollment_submissions_today: number
 }

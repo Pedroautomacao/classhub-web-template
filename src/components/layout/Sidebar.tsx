@@ -41,7 +41,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard', permission: Permission.DASHBOARD_READ },
   { label: 'Alunos', icon: <People />, path: '/admin/students', permission: Permission.STUDENTS_READ },
-  { label: 'Nova Matrícula', icon: <HowToReg />, path: '/admin/enrollment', permission: Permission.ENROLLMENT_WRITE },
+  { label: 'Matrícula', icon: <HowToReg />, path: '/admin/enrollment', permission: Permission.ENROLLMENT_WRITE },
   { label: 'Rematrícula', icon: <HowToReg />, path: '/admin/re-enrollment', permission: Permission.ENROLLMENT_WRITE },
   { label: 'Contratos', icon: <Description />, path: '/admin/contracts', permission: Permission.CONTRACTS_READ },
   { label: 'Pagamentos', icon: <Payments />, path: '/admin/payments', permission: Permission.PAYMENTS_READ },
