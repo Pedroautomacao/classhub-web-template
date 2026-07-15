@@ -18,5 +18,7 @@ export interface EnrollmentSubmission {
   availability_snapshot: AvailabilityDay[] | null
   classes_snapshot: SubmissionClassSnapshot[] | null
   has_conflict: boolean
+  conflict_active: boolean
+  student_level: string | null
   created_at: string
 }

@@ -16,17 +16,20 @@ export function ReEnrollmentPage() {
           what: 'A tela de Rematrícula tem duas abas. "Respostas" lista os alunos que responderam ao formulário de rematrícula, mostrando quem renovou (✓) e quem marcou que não vai renovar (✗), a data/hora e se a nova disponibilidade gera conflito com as turmas atuais do aluno. "Formulário" reativa um aluno e cria um novo contrato.',
           actions: [
             'Ver quem renovou e quem optou por não renovar a matrícula',
-            'Filtrar por intervalo de datas, por nome/CPF e por status (rematricularam ou não)',
+            'Filtrar por intervalo de datas, por nome/CPF, por status (rematricularam ou não) e por "Só com conflito"',
             'Abrir os detalhes (ícone de olho) para ver as turmas atuais do aluno com dia/horário e a nova disponibilidade registrada',
-            'Identificar rapidamente conflitos entre a nova disponibilidade e as turmas em que o aluno já está',
+            'Identificar conflitos entre a nova disponibilidade e as turmas em que o aluno já está',
+            'Alocar o aluno em uma turma direto no modal de detalhes, com sugestões de turmas compatíveis',
             'Rematricular um aluno pela aba Formulário',
           ],
           tips: [
-            'A coluna "Conflitos" marca "Conflito" quando alguma turma atual do aluno não cabe mais na nova disponibilidade que ele enviou — reavalie a alocação dele.',
+            'A coluna "Conflitos" mostra "Conflito" quando alguma turma atual do aluno não cabe na nova disponibilidade. Ela é recalculada ao vivo: ao realocar o aluno para uma turma compatível, o selo muda para "Resolvido".',
+            'Use o filtro "Só com conflito" para focar nos alunos que ainda precisam de realocação.',
+            'No modal de detalhes, a lista de turmas sugere as compatíveis com a disponibilidade do aluno — e também com o nível dele, quando houver nivelamento registrado (sem nivelamento, sugere só por horário).',
             'Quem marca "Não quero renovar" no formulário público é inativado e removido das turmas automaticamente, e aparece aqui com ✗.',
             'O card "Rematrículas hoje" no Dashboard contabiliza as respostas do dia.',
           ],
-          flow: 'Aluno responde o formulário de rematrícula (público) → aparece na aba Respostas (com status e conflitos) → Admin reavalia turmas se houver conflito.',
+          flow: 'Aluno responde o formulário (público) → aparece na aba Respostas com status e conflito → Admin abre o modal e aloca em uma turma sugerida → o conflito passa a "Resolvido".',
         }}
       />
 

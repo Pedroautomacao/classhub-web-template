@@ -13,6 +13,7 @@ interface SubmissionListParams {
 
 interface ReEnrollmentListParams extends SubmissionListParams {
   renewed?: boolean
+  has_conflict?: boolean
 }
 
 export const enrollmentSubmissionsApi = {
