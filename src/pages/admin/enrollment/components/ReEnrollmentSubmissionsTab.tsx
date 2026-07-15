@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Box, Stack, TextField, InputAdornment, ToggleButtonGroup, ToggleButton,
   Chip, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Typography, Divider, Checkbox, FormControlLabel, MenuItem, Alert,
+  Button, Typography, Divider, Checkbox, FormControlLabel, Alert,
   CircularProgress,
 } from '@mui/material'
 import { Search, CheckCircle, Cancel, Warning, Visibility } from '@mui/icons-material'
@@ -15,7 +15,7 @@ import { classesApi } from '@/api/classes.api'
 import { DAYS, studentMatchesClass } from '@/utils/availability'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
-import type { EnrollmentSubmission, AvailabilityDay } from '@/types'
+import type { EnrollmentSubmission, AvailabilityDay, Class } from '@/types'
 
 function formatCpf(cpf: string) {
   const d = cpf.replace(/\D/g, '')
@@ -25,6 +25,11 @@ function formatCpf(cpf: string) {
 
 function dayLabel(value: string) {
   return DAYS.find((d) => d.value === value)?.label ?? value
+}
+
+function scheduleLabel(c: Class) {
+  if (!c.schedule.length) return 'Sem horário cadastrado'
+  return c.schedule.map((s) => `${dayLabel(s.day)} ${s.start_time}–${s.end_time}`).join(' · ')
 }
 
 type StatusFilter = 'all' | 'renewed' | 'not_renewed'
@@ -41,7 +46,9 @@ export function ReEnrollmentSubmissionsTab() {
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined)
   const [detail, setDetail] = useState<EnrollmentSubmission | null>(null)
-  const [selectedClassId, setSelectedClassId] = useState('')
+  // Alterações pendentes de matrícula em turma (aplicadas ao salvar).
+  const [toRemove, setToRemove] = useState<Set<string>>(new Set())
+  const [toAdd, setToAdd] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 400)
@@ -69,45 +76,79 @@ export function ReEnrollmentSubmissionsTab() {
 
   const rows = data?.items ?? []
 
-  // Turmas para o modal de alocação (só carrega quando um detalhe está aberto).
-  const { data: classesData } = useQuery({
+  // Turmas para o modal (só carrega quando um detalhe está aberto).
+  const { data: classesData, refetch: refetchClasses } = useQuery({
     queryKey: ['classes', 'all-for-alloc'],
     queryFn: () => classesApi.list({ page_size: 9999 }),
     enabled: !!detail?.student_id,
-    staleTime: 30_000,
   })
   const classes = classesData?.items ?? []
 
-  const allocateMutation = useMutation({
-    mutationFn: ({ classId, studentId }: { classId: string; studentId: string }) =>
-      classesApi.addStudent(classId, studentId),
-    onSuccess: () => {
-      show('Aluno alocado à turma!')
-      setDetail(null)
-      setSelectedClassId('')
-      refetch()
-    },
-    onError: (e) => show(getApiError(e, 'Erro ao alocar o aluno na turma.'), 'error'),
-  })
-
   const availability = (detail?.availability_snapshot ?? []) as AvailabilityDay[]
-  // Turmas em que o aluno já está (do snapshot) — não sugerir de novo.
-  const currentClassIds = new Set((detail?.classes_snapshot ?? []).map((c) => c.id).filter(Boolean))
-
   const studentLevel = detail?.student_level ?? null
+  const studentId = detail?.student_id ?? null
 
-  const rankedClasses = useMemo(() => {
+  // Estado ATUAL do aluno nas turmas (não o snapshot histórico).
+  const currentClasses = useMemo(
+    () => classes.filter((c) => c.students?.some((s) => s.id === studentId)),
+    [classes, studentId],
+  )
+  const currentClassIds = useMemo(() => new Set(currentClasses.map((c) => c.id)), [currentClasses])
+
+  const availableClasses = useMemo(() => {
     const eligible = classes.filter((c) => !currentClassIds.has(c.id))
     const withFit = eligible.map((c) => {
       const timeFits = availability.length > 0 && studentMatchesClass(availability, c.schedule)
-      // Nível: se o aluno tem nível e a turma define níveis, precisa bater.
-      // Sem nível do aluno ou turma sem níveis definidos → não restringe.
       const levelFits = !studentLevel || !c.levels?.length || c.levels.includes(studentLevel)
       return { cls: c, timeFits, levelFits, fits: timeFits && levelFits }
     })
-    // Sugeridas (horário + nível) primeiro; depois as que batem só no horário.
     return withFit.sort((a, b) => Number(b.fits) - Number(a.fits) || Number(b.timeFits) - Number(a.timeFits))
   }, [classes, availability, currentClassIds, studentLevel])
+
+  const openDetail = (r: EnrollmentSubmission) => {
+    setToRemove(new Set())
+    setToAdd(new Set())
+    setDetail(r)
+  }
+  const closeDetail = () => {
+    setDetail(null)
+    setToRemove(new Set())
+    setToAdd(new Set())
+  }
+
+  const toggleRemove = (classId: string) => {
+    setToRemove((prev) => {
+      const next = new Set(prev)
+      next.has(classId) ? next.delete(classId) : next.add(classId)
+      return next
+    })
+  }
+  const toggleAdd = (classId: string) => {
+    setToAdd((prev) => {
+      const next = new Set(prev)
+      next.has(classId) ? next.delete(classId) : next.add(classId)
+      return next
+    })
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!studentId) return
+      await Promise.all([
+        ...[...toRemove].map((classId) => classesApi.removeStudent(classId, studentId)),
+        ...[...toAdd].map((classId) => classesApi.addStudent(classId, studentId)),
+      ])
+    },
+    onSuccess: () => {
+      show('Matrículas em turma atualizadas!')
+      closeDetail()
+      refetchClasses()
+      refetch()
+    },
+    onError: (e) => show(getApiError(e, 'Erro ao atualizar as turmas do aluno.'), 'error'),
+  })
+
+  const hasChanges = toRemove.size > 0 || toAdd.size > 0
 
   const columns: Column<EnrollmentSubmission>[] = [
     { key: 'full_name', label: 'Nome' },
@@ -137,8 +178,8 @@ export function ReEnrollmentSubmissionsTab() {
             ) : (
               <Chip label="OK" size="small" color="success" variant="outlined" />
             )}
-            <Tooltip title="Ver turmas e disponibilidade">
-              <IconButton size="small" onClick={() => setDetail(r)}>
+            <Tooltip title="Gerenciar turmas e disponibilidade">
+              <IconButton size="small" onClick={() => openDetail(r)}>
                 <Visibility fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -191,13 +232,8 @@ export function ReEnrollmentSubmissionsTab() {
         onSortChange={(by, order) => { setSortBy(by); setSortOrder(order) }}
       />
 
-      <Dialog
-        open={!!detail}
-        onClose={() => { setDetail(null); setSelectedClassId('') }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Turmas e disponibilidade — {detail?.full_name}</DialogTitle>
+      <Dialog open={!!detail} onClose={closeDetail} maxWidth="sm" fullWidth>
+        <DialogTitle>Gerenciar turmas — {detail?.full_name}</DialogTitle>
         <DialogContent>
           {detail && (
             <Stack spacing={2} sx={{ pt: 1 }}>
@@ -205,103 +241,119 @@ export function ReEnrollmentSubmissionsTab() {
                 <Chip icon={<Warning />} label="Há conflito entre as turmas atuais e a nova disponibilidade" color="warning" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
               )}
 
-              <Typography variant="subtitle2" fontWeight={700} color="primary">Turmas atuais do aluno</Typography>
-              {detail.classes_snapshot?.length ? (
-                <Stack spacing={1}>
-                  {detail.classes_snapshot.map((c, i) => (
-                    <Box key={c.id ?? i} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-                      <Typography variant="body2" fontWeight={600}>{c.name}</Typography>
-                      {c.schedule.length ? c.schedule.map((s, j) => (
-                        <Typography key={j} variant="caption" color="text.secondary" display="block">
-                          {dayLabel(s.day)} — {s.start_time} às {s.end_time}
-                        </Typography>
-                      )) : (
-                        <Typography variant="caption" color="text.secondary">Sem horário cadastrado.</Typography>
-                      )}
-                    </Box>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">O aluno não estava em nenhuma turma.</Typography>
-              )}
-
-              <Divider />
-
               <Typography variant="subtitle2" fontWeight={700} color="primary">Nova disponibilidade registrada</Typography>
               {availability.length ? (
-                <Stack spacing={1}>
+                <Stack spacing={0.5}>
                   {availability.map((a, i) => (
-                    <Box key={i}>
-                      <Typography variant="body2" fontWeight={600}>{dayLabel(a.day)}</Typography>
-                      {a.slots.map((slot, j) => (
-                        <Typography key={j} variant="caption" color="text.secondary" display="block">
-                          {slot.start} às {slot.end}
-                        </Typography>
-                      ))}
-                    </Box>
+                    <Typography key={i} variant="caption" color="text.secondary">
+                      <strong>{dayLabel(a.day)}:</strong> {a.slots.map((s) => `${s.start}–${s.end}`).join(', ')}
+                    </Typography>
                   ))}
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">Nenhuma disponibilidade informada.</Typography>
               )}
 
-              {detail.student_id && (
+              {studentId && (
                 <>
                   <Divider />
-                  <Typography variant="subtitle2" fontWeight={700} color="primary">Alocar em uma turma</Typography>
+                  <Typography variant="subtitle2" fontWeight={700} color="primary">Turmas atuais do aluno</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Marque as turmas das quais deseja remover o aluno (ex.: a que está em conflito).
+                  </Typography>
+                  {currentClasses.length ? (
+                    <Stack spacing={0.5}>
+                      {currentClasses.map((c) => {
+                        const fits = availability.length > 0 && studentMatchesClass(availability, c.schedule)
+                        return (
+                          <Box
+                            key={c.id}
+                            sx={{
+                              border: 1, borderColor: 'divider', borderRadius: 1, p: 1,
+                              opacity: toRemove.has(c.id) ? 0.6 : 1,
+                            }}
+                          >
+                            <FormControlLabel
+                              sx={{ m: 0, width: '100%' }}
+                              control={<Checkbox size="small" color="error" checked={toRemove.has(c.id)} onChange={() => toggleRemove(c.id)} />}
+                              label={
+                                <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                                  <Typography variant="body2" fontWeight={600} sx={{ textDecoration: toRemove.has(c.id) ? 'line-through' : 'none' }}>
+                                    {c.name}
+                                  </Typography>
+                                  {!fits && <Chip icon={<Warning />} label="Conflito" size="small" color="warning" variant="outlined" />}
+                                  <Typography variant="caption" color="text.secondary">{scheduleLabel(c)}</Typography>
+                                </Stack>
+                              }
+                            />
+                          </Box>
+                        )
+                      })}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">O aluno não está em nenhuma turma.</Typography>
+                  )}
+
+                  <Divider />
+                  <Typography variant="subtitle2" fontWeight={700} color="primary">Adicionar em turmas</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {studentLevel
-                      ? `Sugestão por disponibilidade do aluno e por nível (${studentLevel}). As turmas sugeridas aparecem primeiro.`
-                      : 'Sugestão pela disponibilidade do aluno (sem nivelamento registrado). As turmas compatíveis aparecem primeiro.'}
+                      ? `Sugestão por disponibilidade e por nível (${studentLevel}). As turmas sugeridas aparecem primeiro. Você pode selecionar mais de uma.`
+                      : 'Sugestão pela disponibilidade do aluno (sem nivelamento registrado). Você pode selecionar mais de uma.'}
                   </Typography>
-                  <TextField
-                    select
-                    label="Selecione a turma"
-                    fullWidth
-                    size="small"
-                    value={selectedClassId}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
-                  >
-                    {rankedClasses.length === 0 && <MenuItem disabled>Nenhuma turma disponível</MenuItem>}
-                    {rankedClasses.map(({ cls, fits, timeFits, levelFits }) => (
-                      <MenuItem key={cls.id} value={cls.id}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" spacing={1}>
-                          <span>{cls.name}</span>
-                          <Stack direction="row" spacing={0.5}>
-                            {fits && <Chip label="Sugerida" size="small" color="success" />}
-                            {!timeFits && <Chip label="Fora do horário" size="small" color="warning" variant="outlined" />}
-                            {timeFits && !levelFits && <Chip label="Outro nível" size="small" color="warning" variant="outlined" />}
-                          </Stack>
-                        </Stack>
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  {(() => {
-                    const sel = rankedClasses.find((r) => r.cls.id === selectedClassId)
-                    if (!sel) return null
-                    if (!sel.timeFits) {
-                      return <Alert severity="warning">Esta turma não cabe na disponibilidade que o aluno registrou.</Alert>
-                    }
-                    if (!sel.levelFits) {
-                      return <Alert severity="warning">O nível do aluno ({studentLevel}) não corresponde ao(s) nível(is) desta turma.</Alert>
-                    }
-                    return null
-                  })()}
+                  {availableClasses.length ? (
+                    <Stack spacing={0.5}>
+                      {availableClasses.map(({ cls, fits, timeFits, levelFits }) => (
+                        <Box
+                          key={cls.id}
+                          sx={{
+                            border: 1, borderColor: toAdd.has(cls.id) ? 'primary.main' : 'divider',
+                            borderRadius: 1, p: 1,
+                          }}
+                        >
+                          <FormControlLabel
+                            sx={{ m: 0, width: '100%' }}
+                            control={<Checkbox size="small" checked={toAdd.has(cls.id)} onChange={() => toggleAdd(cls.id)} />}
+                            label={
+                              <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                                <Typography variant="body2" fontWeight={600}>{cls.name}</Typography>
+                                {fits && <Chip label="Sugerida" size="small" color="success" />}
+                                {!timeFits && <Chip label="Fora do horário" size="small" color="warning" variant="outlined" />}
+                                {timeFits && !levelFits && <Chip label="Outro nível" size="small" color="warning" variant="outlined" />}
+                                <Typography variant="caption" color="text.secondary">{scheduleLabel(cls)}</Typography>
+                              </Stack>
+                            }
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">Nenhuma turma disponível para adicionar.</Typography>
+                  )}
+
+                  {hasChanges && (
+                    <Alert severity="info">
+                      {toRemove.size > 0 && `${toRemove.size} remoção(ões)`}
+                      {toRemove.size > 0 && toAdd.size > 0 && ' e '}
+                      {toAdd.size > 0 && `${toAdd.size} inclusão(ões)`}
+                      {' '}serão aplicadas ao salvar.
+                    </Alert>
+                  )}
                 </>
               )}
             </Stack>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDetail(null); setSelectedClassId('') }}>Fechar</Button>
-          {detail?.student_id && (
+          <Button onClick={closeDetail}>Fechar</Button>
+          {studentId && (
             <Button
               variant="contained"
-              disabled={!selectedClassId || allocateMutation.isPending}
-              startIcon={allocateMutation.isPending ? <CircularProgress size={16} color="inherit" /> : null}
-              onClick={() => detail.student_id && allocateMutation.mutate({ classId: selectedClassId, studentId: detail.student_id })}
+              disabled={!hasChanges || saveMutation.isPending}
+              startIcon={saveMutation.isPending ? <CircularProgress size={16} color="inherit" /> : null}
+              onClick={() => saveMutation.mutate()}
             >
-              Alocar na turma
+              Salvar alterações
             </Button>
           )}
         </DialogActions>
