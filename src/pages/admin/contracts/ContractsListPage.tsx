@@ -281,8 +281,10 @@ export function ContractsListPage() {
             'Contratos expirados aparecem em destaque — use para identificar alunos que precisam renovar.',
             'O período de carência permite que o aluno continue ativo por alguns dias após o vencimento.',
             'Contratos são criados automaticamente no fluxo de Matrícula e Rematrícula.',
+            'Quando o aluno rematricula antes do contrato atual acabar, o novo contrato já começa no dia seguinte ao fim do atual — e o contrato vigente ganha o selo "Vai renovar" (some do alerta "Expira em breve").',
+            'Ao expirar de fato, o contrato antigo que já tinha um sucessor é arquivado automaticamente e deixa de aparecer nesta lista.',
           ],
-          flow: 'Matrícula/Rematrícula → Criação automática do Contrato → Acompanhamento aqui → Renovação via Rematrícula.',
+          flow: 'Matrícula/Rematrícula → Criação automática do Contrato → Acompanhamento aqui → Rematrícula encadeia o próximo contrato ("Vai renovar") → Contrato antigo é arquivado ao expirar.',
         }}
       />
 
