@@ -197,8 +197,14 @@ export function ContractsListPage() {
       render: (c) => (
         <Stack direction="row" alignItems="center" spacing={1}>
           <span>{c.end_date ? dayjs(c.end_date).format('DD/MM/YYYY') : '—'}</span>
-          {isExpiringSoon(c.end_date) && c.status === 'active' && (
-            <Chip label="Expira em breve" color="warning" size="small" />
+          {c.status === 'active' && c.has_successor ? (
+            <Tooltip title="O aluno já rematriculou — há um novo contrato em seguida">
+              <Chip label="Vai renovar" color="info" size="small" />
+            </Tooltip>
+          ) : (
+            isExpiringSoon(c.end_date) && c.status === 'active' && (
+              <Chip label="Expira em breve" color="warning" size="small" />
+            )
           )}
           {canWrite && (
             <Tooltip title="Editar data de término">
@@ -219,7 +225,12 @@ export function ContractsListPage() {
     {
       key: 'status', label: 'Status', align: 'center',
       render: (c) => (
-        <Chip label={STATUS_LABELS[c.status]} color={STATUS_COLORS[c.status]} size="small" variant="outlined" />
+        <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+          <Chip label={STATUS_LABELS[c.status]} color={STATUS_COLORS[c.status]} size="small" variant="outlined" />
+          {c.status === 'active' && c.has_successor && (
+            <Chip label="Vai renovar" color="info" size="small" />
+          )}
+        </Stack>
       ),
     },
     {
