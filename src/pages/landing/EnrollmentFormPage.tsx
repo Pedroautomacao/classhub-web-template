@@ -41,7 +41,7 @@ const schema = z.object({
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
   cpf: z.string().min(1, 'CPF obrigatório'),
-  availability: z.array(availabilityDaySchema).optional(),
+  availability: z.array(availabilityDaySchema).min(1, 'Informe sua disponibilidade de horários'),
   coupon: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
   payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
@@ -215,7 +215,14 @@ export function EnrollmentFormPage() {
 
             <Divider />
 
-            <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
+            <Box>
+              <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
+              {typeof errors.availability?.message === 'string' && (
+                <Typography variant="caption" color="error">
+                  {errors.availability.message}
+                </Typography>
+              )}
+            </Box>
 
             <Divider />
 
