@@ -26,6 +26,7 @@ import { MuiTelInput } from 'mui-tel-input'
 import { enrollmentApi } from '@/api/enrollment.api'
 import { plansApi } from '@/api/plans.api'
 import { DatePickerField } from '@/components/common/DatePickerField'
+import { AvailabilityEditor, availabilityDaySchema } from '@/components/common/AvailabilityEditor'
 import { e164ToDigits } from '@/utils/phone'
 
 const PAYMENT_METHODS = [
@@ -40,6 +41,7 @@ const schema = z.object({
   instagram: z.string().optional(),
   birth_date: z.string().optional(),
   cpf: z.string().min(1, 'CPF obrigatório'),
+  availability: z.array(availabilityDaySchema).optional(),
   coupon: z.string().optional(),
   plan_id: z.string().min(1, 'Selecione um plano'),
   payment_method: z.enum(['pix', 'credit_card'], { message: 'Selecione a forma de pagamento' }),
@@ -70,10 +72,11 @@ export function EnrollmentFormPage() {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { contract_accepted: undefined as unknown as true },
+    defaultValues: { availability: [], contract_accepted: undefined as unknown as true },
   })
 
   const onSubmit = async (values: FormValues) => {
@@ -86,6 +89,7 @@ export function EnrollmentFormPage() {
         instagram: values.instagram || undefined,
         birth_date: values.birth_date || undefined,
         cpf: values.cpf.replace(/\D/g, ''),
+        availability: values.availability?.length ? values.availability : undefined,
         coupon: values.coupon || undefined,
         plan_id: values.plan_id,
         payment_method: values.payment_method,
@@ -208,6 +212,10 @@ export function EnrollmentFormPage() {
                 />
               </Grid>
             </Grid>
+
+            <Divider />
+
+            <AvailabilityEditor control={control} register={register} watch={watch} errors={errors} />
 
             <Divider />
 
