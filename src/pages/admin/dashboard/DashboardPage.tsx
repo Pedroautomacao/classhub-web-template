@@ -8,6 +8,7 @@ import {
   Grid,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import {
@@ -22,6 +23,7 @@ import {
   FiberManualRecord,
   Pending,
   HowToReg,
+  InfoOutlined,
 } from '@mui/icons-material'
 import { dashboardApi } from '@/api/dashboard.api'
 import { classesApi } from '@/api/classes.api'
@@ -42,10 +44,11 @@ interface KpiCardProps {
   color?: string
   loading?: boolean
   highlight?: boolean
+  hint?: string
   onClick?: () => void
 }
 
-function KpiCard({ label, value, icon, color = 'primary.main', loading, highlight, onClick }: KpiCardProps) {
+function KpiCard({ label, value, icon, color = 'primary.main', loading, highlight, hint, onClick }: KpiCardProps) {
   const clickable = !!onClick && (value ?? 0) > 0
   return (
     <Card
@@ -64,9 +67,16 @@ function KpiCard({ label, value, icon, color = 'primary.main', loading, highligh
       <CardContent sx={{ p: '12px !important' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
           <Box>
-            <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.3}>
-              {label}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.3}>
+                {label}
+              </Typography>
+              {hint && (
+                <Tooltip title={hint}>
+                  <InfoOutlined sx={{ fontSize: 14, color: 'text.disabled' }} />
+                </Tooltip>
+              )}
+            </Stack>
             {loading ? (
               <Skeleton variant="text" width={40} height={36} />
             ) : (
@@ -166,6 +176,7 @@ export function DashboardPage() {
             icon={<PersonOff color="action" />}
             color="text.secondary"
             loading={isLoading}
+            hint="Considera apenas alunos inativados nos últimos 30 dias."
             onClick={go('/admin/students', { status: 'inactive' })}
           />
         </Grid>
