@@ -31,7 +31,7 @@ import { StudentFormModal } from './components/StudentFormModal'
 import { StudentDetailsModal } from './components/StudentDetailsModal'
 import { studentsApi, type StudentUpdate } from '@/api/students.api'
 import { classesApi } from '@/api/classes.api'
-import { studentMatchesClass } from '@/utils/availability'
+import { studentMatchesClass, DAYS } from '@/utils/availability'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { usePermission } from '@/hooks/usePermission'
 import { Permission } from '@/utils/permissions'
@@ -221,12 +221,22 @@ export function StudentsListPage() {
         page: 1,
         page_size: 9999,
       })
+      const availabilityForDay = (s: Student, day: string) =>
+        (s.availability ?? [])
+          .find((a) => a.day === day)?.slots
+          .map((slot) => `${slot.start}-${slot.end}`)
+          .join(';') ?? ''
       exportToXlsx(all.items, [
         { label: 'Nome', value: (s) => s.full_name },
         { label: 'E-mail', value: (s) => s.email ?? '' },
         { label: 'Telefone', value: (s) => s.phone ?? '' },
         { label: 'Status', value: (s) => s.status },
         { label: 'Nível', value: (s) => s.level ?? '' },
+        { label: 'Plano', value: (s) => s.plan?.name ?? '' },
+        ...DAYS.map((d) => ({
+          label: d.label,
+          value: (s: Student) => availabilityForDay(s, d.value),
+        })),
       ], 'alunos')
     } finally {
       setIsExporting(false)
