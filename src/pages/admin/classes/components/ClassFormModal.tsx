@@ -51,7 +51,8 @@ const schema = z.object({
   meeting_link: z.string().url('URL inválida').optional().or(z.literal('')),
   levels: z.array(z.string()).optional(),
 })
-type FormValues = z.infer<typeof schema>
+export type ClassFormValues = z.infer<typeof schema>
+type FormValues = ClassFormValues
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 type DayValue = typeof DAY_NAMES[number]
@@ -64,12 +65,13 @@ function getDayFromDate(dateStr: string): DayValue {
 interface Props {
   open: boolean
   cls?: Class | null
+  initialValues?: Partial<FormValues>
   loading?: boolean
   onClose: () => void
   onSubmit: (v: FormValues) => void
 }
 
-export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }: Props) {
+export function ClassFormModal({ open, cls, initialValues, loading = false, onClose, onSubmit }: Props) {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -196,10 +198,11 @@ export function ClassFormModal({ open, cls, loading = false, onClose, onSubmit }
             student_ids: [],
             meeting_link: '',
             levels: [],
+            ...initialValues,
           }
       )
     }
-  }, [open, cls, reset])
+  }, [open, cls, initialValues, reset])
 
   const isBiweekly = watchedFrequency === 'biweekly'
 

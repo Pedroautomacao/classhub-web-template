@@ -11,6 +11,7 @@ import { DataTable, type Column, type SortOrder } from '@/components/common/Data
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { ClassFormModal } from './components/ClassFormModal'
 import { LiveClassesTab } from './components/LiveClassesTab'
+import { SuggestedClassesTab } from './components/SuggestedClassesTab'
 import { classesApi, type ClassPayload } from '@/api/classes.api'
 import { teachersApi } from '@/api/teachers.api'
 import { useSnackbarStore } from '@/store/snackbar.store'
@@ -215,9 +216,12 @@ export function ClassesListPage() {
             </Stack>
           }
         />
+        <Tab label="Sugestões de Turma" />
       </Tabs>
       {tab === 1 ? (
         <LiveClassesTab />
+      ) : tab === 2 ? (
+        <SuggestedClassesTab />
       ) : (
         <>
           <Stack direction="row" flexWrap="wrap" gap={1.5} mb={2} alignItems="center">

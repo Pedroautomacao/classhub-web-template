@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Class, PaginatedResponse } from '@/types'
+import type { Class, PaginatedResponse, AllocationSuggestions } from '@/types'
 
 export interface ClassSchedulePayload {
   day: string
@@ -56,4 +56,7 @@ export const classesApi = {
 
   updateMeetingLink: (id: string, meeting_link: string | null) =>
     api.patch<Class>(`/classes/${id}/meeting-link`, { meeting_link }).then((r) => r.data),
+
+  allocationSuggestions: (maxPerClass: number) =>
+    api.get<AllocationSuggestions>('/classes/allocation-suggestions', { params: { max_per_class: maxPerClass } }).then((r) => r.data),
 }
