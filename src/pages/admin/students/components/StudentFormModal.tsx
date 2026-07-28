@@ -134,6 +134,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
           <TextField
             label="Nome completo *"
             fullWidth
+            slotProps={{ inputLabel: { shrink: true } }}
             error={!!errors.full_name}
             helperText={errors.full_name?.message}
             {...register('full_name')}
@@ -144,6 +145,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
                 label="CPF *"
                 fullWidth
                 placeholder="000.000.000-00"
+                slotProps={{ inputLabel: { shrink: true } }}
                 inputProps={{ inputMode: 'numeric' }}
                 error={!!errors.cpf}
                 helperText={errors.cpf?.message}
@@ -170,6 +172,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
                 label="E-mail"
                 type="email"
                 fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
                 error={!!errors.email}
                 helperText={errors.email?.message}
                 {...register('email')}
@@ -191,7 +194,7 @@ export function StudentFormModal({ open, student, loading = false, onClose, onSu
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Instagram" fullWidth {...register('instagram')} />
+              <TextField label="Instagram" fullWidth slotProps={{ inputLabel: { shrink: true } }} {...register('instagram')} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
