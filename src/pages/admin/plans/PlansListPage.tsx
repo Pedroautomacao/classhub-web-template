@@ -178,17 +178,21 @@ export function PlansListPage() {
         actionLabel="Novo Plano"
         actionDisabled={!canWrite}
         helpContent={{
-          what: 'A tela de Planos define os pacotes de curso oferecidos pela escola. Cada plano tem um nome, duração em meses e preço — e é selecionado no momento da matrícula.',
+          what: 'A tela de Planos define os pacotes de curso oferecidos pela escola. Cada plano tem nome, duração em meses, preço e a modalidade das aulas (gramática e/ou conversação) e a frequência (semanal ou quinzenal) — é selecionado no momento da matrícula.',
           actions: [
             'Criar novos planos com nome, duração e valor',
+            'Definir a modalidade que o plano cobre: Gramática e/ou Conversação',
+            'Definir a frequência das aulas do plano: Semanal ou Quinzenal',
             'Editar planos existentes',
             'Ativar ou desativar planos (planos inativos não aparecem no formulário de matrícula)',
           ],
           tips: [
             'Crie planos distintos para diferenciar frequências, durações ou modalidades (ex: Plano Semestral, Plano Anual).',
+            'A modalidade e a frequência alimentam a aba "Sugestões de Turma": o sistema usa esses dados para saber de que tipo de turma (gramática/conversação) e com que frequência o aluno precisa. Um plano que cobre os dois tipos indica que o aluno precisa de duas turmas.',
+            'Planos sem modalidade marcada deixam o aluno em "Pendências" na aba de sugestões — marque Gramática e/ou Conversação para ele entrar no fluxo automático.',
             'Um plano desativado não pode ser escolhido em novas matrículas, mas contratos já criados são mantidos.',
           ],
-          flow: 'Criação do Plano → Uso no Formulário de Matrícula → Associado ao Contrato do Aluno.',
+          flow: 'Criação do Plano (modalidade + frequência) → Uso no Formulário de Matrícula → Associado ao Contrato → Base para as Sugestões de Turma.',
         }}
         onAction={() => {
           setSelected(null)

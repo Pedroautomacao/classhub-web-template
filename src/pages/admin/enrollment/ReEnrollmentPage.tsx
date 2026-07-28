@@ -19,7 +19,7 @@ export function ReEnrollmentPage() {
             'Filtrar por intervalo de datas, por nome/CPF, por status (rematricularam ou não) e por "Só com conflito"',
             'Abrir os detalhes (ícone de olho) para ver as turmas atuais do aluno com dia/horário e a nova disponibilidade registrada',
             'Identificar conflitos entre a nova disponibilidade e as turmas em que o aluno já está',
-            'Alocar o aluno em uma turma direto no modal de detalhes, com sugestões de turmas compatíveis',
+            'Gerenciar as turmas do aluno direto no modal de detalhes: remover das turmas atuais (inclusive a que gera conflito) e adicioná-lo em uma ou mais turmas sugeridas de uma vez',
             'Rematricular um aluno pela aba Formulário',
           ],
           tips: [

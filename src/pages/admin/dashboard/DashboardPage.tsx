@@ -142,13 +142,16 @@ export function DashboardPage() {
             'Visualizar total de alunos ativos, inativos e sem turma',
             'Ver quantidade de contratos ativos, expirados e próximos do vencimento',
             'Acompanhar formulários de nivelamento e matrículas pendentes de análise',
+            'Acompanhar quantas matrículas e rematrículas foram respondidas hoje',
             'Navegar rapidamente para listas filtradas clicando nos cards',
           ],
           tips: [
             'Clique em qualquer card para ser redirecionado à lista correspondente já filtrada.',
+            'O card "Alunos Inativos" conta apenas os inativados nos últimos 30 dias (passe o mouse no ícone de informação para confirmar) — serve para acompanhar evasão recente, não o histórico todo.',
+            'Os cards "Matrículas hoje" e "Rematrículas hoje" contam as respostas dos formulários do dia (no fuso de São Paulo) e levam às respectivas telas.',
             'Os dados são atualizados automaticamente ao recarregar a página.',
           ],
-          flow: 'O Dashboard é o ponto de partida. A partir dele, navegue para Alunos, Contratos ou Nivelamento conforme a necessidade do dia.',
+          flow: 'O Dashboard é o ponto de partida. A partir dele, navegue para Alunos, Contratos, Nivelamento ou as respostas de Matrícula/Rematrícula conforme a necessidade do dia.',
         }}
       />
 

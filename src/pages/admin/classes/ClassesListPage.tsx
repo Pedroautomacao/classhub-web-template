@@ -187,13 +187,14 @@ export function ClassesListPage() {
         actionLabel="Nova Turma" actionDisabled={!canWrite}
         onAction={() => { setSelected(null); setFormOpen(true) }}
         helpContent={{
-          what: 'A tela de Turmas organiza os grupos de alunos vinculados a um professor. Cada turma define tipo de aula, frequência, dias/horários de encontro e link de acesso online.',
+          what: 'A tela de Turmas organiza os grupos de alunos vinculados a um professor. Cada turma define tipo de aula, frequência, dias/horários de encontro e link de acesso online. A aba "Sugestões de Turma" ajuda a montar turmas automaticamente a partir dos alunos que ainda não têm turma.',
           actions: [
             'Criar turmas com nome, tipo (gramática, conversação, aula particular), frequência e horários',
             'Vincular um professor responsável à turma',
             'Adicionar e remover alunos de cada turma',
             'Definir o link de reunião online (Google Meet, Zoom, etc.)',
             'Visualizar quais turmas estão acontecendo agora na aba "Ao Vivo"',
+            'Usar a aba "Sugestões de Turma" para alocar alunos sem turma: o sistema indica quem encaixa em turmas existentes e sugere novas turmas agrupando alunos compatíveis',
           ],
           tips: [
             'Turmas quinzenais exigem uma "Data da 1ª aula". A partir dela o sistema alterna automaticamente a cada 2 semanas — nenhuma configuração adicional por semana.',
@@ -202,8 +203,9 @@ export function ClassesListPage() {
             'Ao adicionar um aluno com horário conflitante, o sistema exibe um aviso — você pode ignorá-lo se souber da exceção.',
             'Defina os níveis de idioma aceitos para que o sistema alerte quando um aluno de nível diferente for adicionado.',
             'O link de reunião pode ser editado diretamente pelo professor no Portal do Professor.',
+            'Em "Sugestões de Turma", o sistema usa o plano do aluno (gramática/conversação e frequência), o nível e a disponibilidade para agrupar. Ajuste o "Máx. por turma" para controlar o tamanho — grupos maiores que o limite viram mais de uma turma sugerida. Alunos sem plano, nível ou disponibilidade aparecem em "Pendências" e podem ser editados ali mesmo.',
           ],
-          flow: 'Cadastro do Professor → Criação da Turma (defina frequência e, se quinzenal, a data da 1ª aula) → Adição de Alunos → O Professor acessa pelo Portal.',
+          flow: 'Cadastro do Professor → Criação da Turma (manual ou via "Sugestões de Turma") → Adição de Alunos → O Professor acessa pelo Portal.',
         }}
       />
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
