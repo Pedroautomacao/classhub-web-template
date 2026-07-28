@@ -84,7 +84,7 @@ export function PlansListPage() {
     onError: (error) => show(getApiError(error, 'Erro ao excluir plano.'), 'error'),
   })
 
-  const handleSubmit = (values: { name: string; description?: string; duration_months: number; price: number; benefits: string[]; covers_grammar: boolean; covers_conversation: boolean; frequency: 'weekly' | 'biweekly' }) => {
+  const handleSubmit = (values: { name: string; description?: string; duration_months: number; price: number; benefits: string[]; covers_grammar: boolean; covers_conversation: boolean; grammar_frequency: 'weekly' | 'biweekly'; conversation_frequency: 'weekly' | 'biweekly' }) => {
     const payload = {
       name: values.name,
       description: values.description ?? null,
@@ -93,7 +93,8 @@ export function PlansListPage() {
       benefits: values.benefits.length > 0 ? values.benefits : null,
       covers_grammar: values.covers_grammar,
       covers_conversation: values.covers_conversation,
-      frequency: values.frequency,
+      grammar_frequency: values.grammar_frequency,
+      conversation_frequency: values.conversation_frequency,
     }
     if (selected) {
       updateMutation.mutate({ id: selected.id, data: payload })

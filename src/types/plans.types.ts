@@ -11,6 +11,8 @@ export interface Plan {
   covers_grammar: boolean
   covers_conversation: boolean
   frequency: ClassFrequency
+  grammar_frequency: ClassFrequency
+  conversation_frequency: ClassFrequency
   created_at: string
   updated_at: string
 }

@@ -39,7 +39,8 @@ const schema = z.object({
     .refine((n) => n > 0, 'Preço deve ser positivo'),
   covers_grammar: z.boolean(),
   covers_conversation: z.boolean(),
-  frequency: z.enum(['weekly', 'biweekly']),
+  grammar_frequency: z.enum(['weekly', 'biweekly']),
+  conversation_frequency: z.enum(['weekly', 'biweekly']),
 })
 
 type FormValues = z.input<typeof schema>
@@ -73,8 +74,12 @@ export function PlanFormModal({
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors },
   } = useForm<FormValues, unknown, FormOutput>({ resolver: zodResolver(schema) })
+
+  const coversGrammar = watch('covers_grammar')
+  const coversConversation = watch('covers_conversation')
 
   useEffect(() => {
     if (open) {
@@ -88,9 +93,10 @@ export function PlanFormModal({
               price: parseFloat(plan.price).toFixed(2).replace('.', ','),
               covers_grammar: plan.covers_grammar,
               covers_conversation: plan.covers_conversation,
-              frequency: plan.frequency,
+              grammar_frequency: plan.grammar_frequency,
+              conversation_frequency: plan.conversation_frequency,
             }
-          : { name: '', description: '', duration_months: 1, price: '', covers_grammar: false, covers_conversation: false, frequency: 'weekly' }
+          : { name: '', description: '', duration_months: 1, price: '', covers_grammar: false, covers_conversation: false, grammar_frequency: 'weekly', conversation_frequency: 'weekly' }
       )
       setBenefits(plan?.benefits ?? [])
       setBenefitInput('')
@@ -184,47 +190,60 @@ export function PlanFormModal({
           <Box>
             <Typography variant="subtitle2" fontWeight={600} mb={1}>Modalidade das aulas</Typography>
             <Typography variant="caption" color="text.secondary">
-              Usado para sugerir turmas: define que tipo de aula este plano cobre e a frequência.
+              Usado para sugerir turmas: marque os tipos de aula que este plano cobre e a frequência de cada um.
             </Typography>
-            <Stack sx={{ mt: 1 }}>
-              <Controller
-                name="covers_grammar"
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
-                    label="Gramática"
+            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Controller
+                  name="covers_grammar"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      sx={{ minWidth: 150, m: 0 }}
+                      control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                      label="Gramática"
+                    />
+                  )}
+                />
+                {coversGrammar && (
+                  <Controller
+                    name="grammar_frequency"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField select label="Frequência" size="small" sx={{ minWidth: 180 }} value={field.value ?? 'weekly'} onChange={field.onChange}>
+                        <MenuItem value="weekly">Semanal</MenuItem>
+                        <MenuItem value="biweekly">Quinzenal</MenuItem>
+                      </TextField>
+                    )}
                   />
                 )}
-              />
-              <Controller
-                name="covers_conversation"
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
-                    label="Conversação"
+              </Stack>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Controller
+                  name="covers_conversation"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      sx={{ minWidth: 150, m: 0 }}
+                      control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                      label="Conversação"
+                    />
+                  )}
+                />
+                {coversConversation && (
+                  <Controller
+                    name="conversation_frequency"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField select label="Frequência" size="small" sx={{ minWidth: 180 }} value={field.value ?? 'weekly'} onChange={field.onChange}>
+                        <MenuItem value="weekly">Semanal</MenuItem>
+                        <MenuItem value="biweekly">Quinzenal</MenuItem>
+                      </TextField>
+                    )}
                   />
                 )}
-              />
+              </Stack>
             </Stack>
-            <Controller
-              name="frequency"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  label="Frequência"
-                  fullWidth
-                  sx={{ mt: 1 }}
-                  value={field.value ?? 'weekly'}
-                  onChange={field.onChange}
-                >
-                  <MenuItem value="weekly">Semanal</MenuItem>
-                  <MenuItem value="biweekly">Quinzenal</MenuItem>
-                </TextField>
-              )}
-            />
           </Box>
         </Stack>
       </DialogContent>
