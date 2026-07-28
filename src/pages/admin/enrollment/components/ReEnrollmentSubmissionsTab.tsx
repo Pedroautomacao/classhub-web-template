@@ -15,7 +15,7 @@ import { classesApi } from '@/api/classes.api'
 import { DAYS, studentMatchesClass } from '@/utils/availability'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
-import type { EnrollmentSubmission, AvailabilityDay, Class } from '@/types'
+import type { EnrollmentSubmission, AvailabilityDay, Class, SubmissionPlanInfo } from '@/types'
 
 function formatCpf(cpf: string) {
   const d = cpf.replace(/\D/g, '')
@@ -30,6 +30,17 @@ function dayLabel(value: string) {
 function scheduleLabel(c: Class) {
   if (!c.schedule.length) return 'Sem horário cadastrado'
   return c.schedule.map((s) => `${dayLabel(s.day)} ${s.start_time}–${s.end_time}`).join(' · ')
+}
+
+function freqLabel(f: string) {
+  return f === 'biweekly' ? 'quinzenal' : 'semanal'
+}
+
+function planScopeLabel(p: SubmissionPlanInfo) {
+  const parts: string[] = []
+  if (p.covers_grammar) parts.push(`Gramática ${freqLabel(p.grammar_frequency)}`)
+  if (p.covers_conversation) parts.push(`Conversação ${freqLabel(p.conversation_frequency)}`)
+  return parts.length ? parts.join(', ') : 'sem modalidade definida'
 }
 
 type StatusFilter = 'all' | 'renewed' | 'not_renewed'
@@ -86,6 +97,7 @@ export function ReEnrollmentSubmissionsTab() {
 
   const availability = (detail?.availability_snapshot ?? []) as AvailabilityDay[]
   const studentLevel = detail?.student_level ?? null
+  const studentPlan = detail?.student_plan ?? null
   const studentId = detail?.student_id ?? null
 
   // Estado ATUAL do aluno nas turmas (não o snapshot histórico).
@@ -100,10 +112,30 @@ export function ReEnrollmentSubmissionsTab() {
     const withFit = eligible.map((c) => {
       const timeFits = availability.length > 0 && studentMatchesClass(availability, c.schedule)
       const levelFits = !studentLevel || !c.levels?.length || c.levels.includes(studentLevel)
-      return { cls: c, timeFits, levelFits, fits: timeFits && levelFits }
+      // Plano: sem plano não restringe. Com plano, a turma precisa ser de um tipo
+      // coberto e ter a frequência da modalidade correspondente.
+      let typeFits = true
+      let freqFits = true
+      if (studentPlan) {
+        if (c.class_type === 'grammar') {
+          typeFits = studentPlan.covers_grammar
+          freqFits = c.frequency === studentPlan.grammar_frequency
+        } else if (c.class_type === 'conversation') {
+          typeFits = studentPlan.covers_conversation
+          freqFits = c.frequency === studentPlan.conversation_frequency
+        } else {
+          // aula particular: não é sugerida por plano
+          typeFits = false
+        }
+      }
+      return { cls: c, timeFits, levelFits, typeFits, freqFits, fits: timeFits && levelFits && typeFits && freqFits }
     })
-    return withFit.sort((a, b) => Number(b.fits) - Number(a.fits) || Number(b.timeFits) - Number(a.timeFits))
-  }, [classes, availability, currentClassIds, studentLevel])
+    return withFit.sort((a, b) =>
+      Number(b.fits) - Number(a.fits)
+      || Number(b.typeFits) - Number(a.typeFits)
+      || Number(b.timeFits) - Number(a.timeFits),
+    )
+  }, [classes, availability, currentClassIds, studentLevel, studentPlan])
 
   const openDetail = (r: EnrollmentSubmission) => {
     setToRemove(new Set())
@@ -297,13 +329,21 @@ export function ReEnrollmentSubmissionsTab() {
                   <Divider />
                   <Typography variant="subtitle2" fontWeight={700} color="primary">Adicionar em turmas</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {studentLevel
-                      ? `Sugestão por disponibilidade e por nível (${studentLevel}). As turmas sugeridas aparecem primeiro. Você pode selecionar mais de uma.`
-                      : 'Sugestão pela disponibilidade do aluno (sem nivelamento registrado). Você pode selecionar mais de uma.'}
+                    As turmas sugeridas ("Sugerida") aparecem primeiro. A sugestão considera a disponibilidade do aluno
+                    {studentPlan ? `, o plano (${studentPlan.name}: ${planScopeLabel(studentPlan)})` : ''}
+                    {studentLevel ? ` e o nível (${studentLevel})` : ''}.
                   </Typography>
+                  {(!studentPlan || !studentLevel) && (
+                    <Alert severity="info" sx={{ py: 0.5 }}>
+                      Sugestão limitada:{' '}
+                      {!studentPlan && 'o aluno não tem plano vinculado, então não filtramos por tipo de aula nem frequência. '}
+                      {!studentLevel && 'o aluno não tem nível registrado, então não filtramos por nível. '}
+                      Ajuste o cadastro do aluno para sugestões mais precisas.
+                    </Alert>
+                  )}
                   {availableClasses.length ? (
                     <Stack spacing={0.5}>
-                      {availableClasses.map(({ cls, fits, timeFits, levelFits }) => (
+                      {availableClasses.map(({ cls, fits, timeFits, levelFits, typeFits, freqFits }) => (
                         <Box
                           key={cls.id}
                           sx={{
@@ -319,7 +359,9 @@ export function ReEnrollmentSubmissionsTab() {
                                 <Typography variant="body2" fontWeight={600}>{cls.name}</Typography>
                                 {fits && <Chip label="Sugerida" size="small" color="success" />}
                                 {!timeFits && <Chip label="Fora do horário" size="small" color="warning" variant="outlined" />}
-                                {timeFits && !levelFits && <Chip label="Outro nível" size="small" color="warning" variant="outlined" />}
+                                {timeFits && !typeFits && <Chip label="Outro tipo de aula" size="small" color="warning" variant="outlined" />}
+                                {timeFits && typeFits && !freqFits && <Chip label="Outra frequência" size="small" color="warning" variant="outlined" />}
+                                {timeFits && typeFits && freqFits && !levelFits && <Chip label="Outro nível" size="small" color="warning" variant="outlined" />}
                                 <Typography variant="caption" color="text.secondary">{scheduleLabel(cls)}</Typography>
                               </Stack>
                             }
