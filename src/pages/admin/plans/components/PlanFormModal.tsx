@@ -193,7 +193,7 @@ export function PlanFormModal({
                 render={({ field }) => (
                   <FormControlLabel
                     control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
-                    label="Cobre Gramática"
+                    label="Gramática"
                   />
                 )}
               />
@@ -203,7 +203,7 @@ export function PlanFormModal({
                 render={({ field }) => (
                   <FormControlLabel
                     control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
-                    label="Cobre Conversação"
+                    label="Conversação"
                   />
                 )}
               />

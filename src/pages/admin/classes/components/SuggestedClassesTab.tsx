@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
-  Box, Stack, Typography, TextField, Button, Chip, Divider, Card, CardContent,
+  Box, Stack, Typography, TextField, Button, Chip, Card, CardContent,
   Checkbox, FormControlLabel, CircularProgress, Tooltip, IconButton,
+  Accordion, AccordionSummary, AccordionDetails,
 } from '@mui/material'
-import { Refresh, Warning, Groups, AddCircleOutline, Edit } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
+import { Refresh, Warning, Groups, AddCircleOutline, Edit, ExpandMore } from '@mui/icons-material'
 import { classesApi, type ClassPayload } from '@/api/classes.api'
+import { studentsApi, type StudentUpdate } from '@/api/students.api'
 import { ClassFormModal, type ClassFormValues } from './ClassFormModal'
+import { StudentFormModal } from '../../students/components/StudentFormModal'
 import { DAYS } from '@/utils/availability'
 import { useSnackbarStore } from '@/store/snackbar.store'
 import { getApiError } from '@/utils/errors'
@@ -27,23 +29,36 @@ function hhmm(t: string) {
 
 export function SuggestedClassesTab() {
   const { show } = useSnackbarStore()
-  const navigate = useNavigate()
   const [maxInput, setMaxInput] = useState(6)
   const [maxPerClass, setMaxPerClass] = useState(6)
   // Seleção por turma existente (class_id -> set de student_ids marcados)
   const [selectedByClass, setSelectedByClass] = useState<Record<string, Set<string>>>({})
   // Modal de criação pré-preenchido a partir de uma sugestão
   const [createInitial, setCreateInitial] = useState<Partial<ClassFormValues> | null>(null)
+  // Aluno em edição (a partir de uma pendência)
+  const [editStudentId, setEditStudentId] = useState<string | null>(null)
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['allocation-suggestions', maxPerClass],
     queryFn: () => classesApi.allocationSuggestions(maxPerClass),
   })
 
+  const { data: editingStudent } = useQuery({
+    queryKey: ['student', editStudentId],
+    queryFn: () => studentsApi.get(editStudentId as string),
+    enabled: !!editStudentId,
+  })
+
   const createMutation = useMutation({
     mutationFn: (payload: ClassPayload) => classesApi.create(payload),
     onSuccess: () => { show('Turma criada!'); setCreateInitial(null); refetch() },
     onError: (e) => show(getApiError(e, 'Erro ao criar turma.'), 'error'),
+  })
+
+  const updateStudentMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: StudentUpdate }) => studentsApi.update(id, data),
+    onSuccess: () => { show('Aluno atualizado!'); setEditStudentId(null); refetch() },
+    onError: (e) => show(getApiError(e, 'Erro ao atualizar aluno.'), 'error'),
   })
 
   const addStudentsMutation = useMutation({
@@ -120,12 +135,15 @@ export function SuggestedClassesTab() {
       {isLoading ? (
         <Stack alignItems="center" py={6}><CircularProgress /></Stack>
       ) : (
-        <Stack spacing={3}>
+        <Stack spacing={1.5}>
           {/* SEÇÃO 1 — encaixam em turmas existentes */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} color="primary" gutterBottom>
-              Encaixam em turmas existentes
-            </Typography>
+          <Accordion defaultExpanded disableGutters>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography variant="subtitle1" fontWeight={700} color="primary">
+                Encaixam em turmas existentes ({data?.existing_matches.length ?? 0})
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
             {data?.existing_matches.length ? (
               <Stack spacing={2}>
                 {data.existing_matches.map((m) => (
@@ -177,15 +195,17 @@ export function SuggestedClassesTab() {
             ) : (
               <Typography variant="body2" color="text.secondary">Nenhum aluno encaixa em turmas já existentes.</Typography>
             )}
-          </Box>
-
-          <Divider />
+            </AccordionDetails>
+          </Accordion>
 
           {/* SEÇÃO 2 — turmas sugeridas para criar */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} color="primary" gutterBottom>
-              Turmas sugeridas para criar
-            </Typography>
+          <Accordion defaultExpanded disableGutters>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography variant="subtitle1" fontWeight={700} color="primary">
+                Turmas sugeridas para criar ({data?.suggested_classes.length ?? 0})
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
             {data?.suggested_classes.length ? (
               <Stack spacing={2}>
                 {data.suggested_classes.map((s, i) => (
@@ -219,16 +239,18 @@ export function SuggestedClassesTab() {
             ) : (
               <Typography variant="body2" color="text.secondary">Nenhuma turma nova sugerida no momento.</Typography>
             )}
-          </Box>
-
-          <Divider />
+            </AccordionDetails>
+          </Accordion>
 
           {/* SEÇÃO 3 — pendências */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} color="warning.main" gutterBottom>
-              <Warning fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-              Pendências (fora do fluxo automático)
-            </Typography>
+          <Accordion disableGutters>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography variant="subtitle1" fontWeight={700} color="warning.main">
+                <Warning fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                Pendências ({data?.pending.length ?? 0})
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
             {data?.pending.length ? (
               <Stack spacing={1}>
                 {data.pending.map((p) => (
@@ -240,8 +262,8 @@ export function SuggestedClassesTab() {
                           <Chip key={r} size="small" color="warning" variant="outlined" label={r} />
                         ))}
                         <Box flex={1} />
-                        <Tooltip title="Abrir aluno para ajustar">
-                          <IconButton size="small" onClick={() => navigate('/admin/students')}>
+                        <Tooltip title="Editar aluno">
+                          <IconButton size="small" onClick={() => setEditStudentId(p.id)}>
                             <Edit fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -253,7 +275,8 @@ export function SuggestedClassesTab() {
             ) : (
               <Typography variant="body2" color="text.secondary">Nenhuma pendência — todos os alunos têm plano, nível e disponibilidade.</Typography>
             )}
-          </Box>
+            </AccordionDetails>
+          </Accordion>
         </Stack>
       )}
 
@@ -262,7 +285,20 @@ export function SuggestedClassesTab() {
         initialValues={createInitial ?? undefined}
         loading={createMutation.isPending}
         onClose={() => setCreateInitial(null)}
-        onSubmit={(v) => createMutation.mutate(v as ClassPayload)}
+        onSubmit={(v) => createMutation.mutate({
+          ...v,
+          teacher_id: v.teacher_id || null,
+          meeting_link: v.meeting_link || null,
+          biweekly_start_date: v.frequency === 'biweekly' ? (v.biweekly_start_date || null) : null,
+        } as ClassPayload)}
+      />
+
+      <StudentFormModal
+        open={!!editStudentId}
+        student={editingStudent ?? null}
+        loading={updateStudentMutation.isPending}
+        onClose={() => setEditStudentId(null)}
+        onSubmit={(values) => editStudentId && updateStudentMutation.mutate({ id: editStudentId, data: values })}
       />
     </Box>
   )
