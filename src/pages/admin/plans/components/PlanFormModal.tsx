@@ -208,17 +208,23 @@ export function PlanFormModal({
                 )}
               />
             </Stack>
-            <TextField
-              select
-              label="Frequência"
-              fullWidth
-              sx={{ mt: 1 }}
-              defaultValue="weekly"
-              {...register('frequency')}
-            >
-              <MenuItem value="weekly">Semanal</MenuItem>
-              <MenuItem value="biweekly">Quinzenal</MenuItem>
-            </TextField>
+            <Controller
+              name="frequency"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  label="Frequência"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  value={field.value ?? 'weekly'}
+                  onChange={field.onChange}
+                >
+                  <MenuItem value="weekly">Semanal</MenuItem>
+                  <MenuItem value="biweekly">Quinzenal</MenuItem>
+                </TextField>
+              )}
+            />
           </Box>
         </Stack>
       </DialogContent>
