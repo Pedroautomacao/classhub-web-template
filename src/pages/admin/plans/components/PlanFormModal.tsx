@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -19,6 +19,9 @@ import {
   Box,
   Chip,
   IconButton,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
 } from '@mui/material'
 import { Add, Close } from '@mui/icons-material'
 import type { Plan } from '@/types'
@@ -34,6 +37,9 @@ const schema = z.object({
     .transform((v) => parseFloat(v.replace(/\./g, '').replace(',', '.')))
     .refine((n) => Number.isFinite(n), 'Informe um valor válido')
     .refine((n) => n > 0, 'Preço deve ser positivo'),
+  covers_grammar: z.boolean(),
+  covers_conversation: z.boolean(),
+  frequency: z.enum(['weekly', 'biweekly']),
 })
 
 type FormValues = z.input<typeof schema>
@@ -66,6 +72,7 @@ export function PlanFormModal({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues, unknown, FormOutput>({ resolver: zodResolver(schema) })
 
@@ -79,8 +86,11 @@ export function PlanFormModal({
               duration_months: plan.duration_months,
               // Exibe com vírgula (locale pt-BR); o schema reconverte para float no submit.
               price: parseFloat(plan.price).toFixed(2).replace('.', ','),
+              covers_grammar: plan.covers_grammar,
+              covers_conversation: plan.covers_conversation,
+              frequency: plan.frequency,
             }
-          : { name: '', description: '', duration_months: 1, price: '' }
+          : { name: '', description: '', duration_months: 1, price: '', covers_grammar: false, covers_conversation: false, frequency: 'weekly' }
       )
       setBenefits(plan?.benefits ?? [])
       setBenefitInput('')
@@ -169,6 +179,46 @@ export function PlanFormModal({
                 ))}
               </Stack>
             )}
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" fontWeight={600} mb={1}>Modalidade das aulas</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Usado para sugerir turmas: define que tipo de aula este plano cobre e a frequência.
+            </Typography>
+            <Stack sx={{ mt: 1 }}>
+              <Controller
+                name="covers_grammar"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Cobre Gramática"
+                  />
+                )}
+              />
+              <Controller
+                name="covers_conversation"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Cobre Conversação"
+                  />
+                )}
+              />
+            </Stack>
+            <TextField
+              select
+              label="Frequência"
+              fullWidth
+              sx={{ mt: 1 }}
+              defaultValue="weekly"
+              {...register('frequency')}
+            >
+              <MenuItem value="weekly">Semanal</MenuItem>
+              <MenuItem value="biweekly">Quinzenal</MenuItem>
+            </TextField>
           </Box>
         </Stack>
       </DialogContent>
