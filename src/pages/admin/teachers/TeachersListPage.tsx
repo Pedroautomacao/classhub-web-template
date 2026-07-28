@@ -203,7 +203,7 @@ export function TeachersListPage() {
       />
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+        <Tabs value={tab} onChange={(_, v) => { setTab(v); if (v === 0) refetch() }}>
           <Tab label="Professores" />
           {canApprove && <Tab label="Fechamentos de Horas" />}
         </Tabs>

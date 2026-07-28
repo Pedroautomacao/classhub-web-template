@@ -208,7 +208,7 @@ export function ClassesListPage() {
           flow: 'Cadastro do Professor → Criação da Turma (manual ou via "Sugestões de Turma") → Adição de Alunos → O Professor acessa pelo Portal.',
         }}
       />
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={tab} onChange={(_, v) => { setTab(v); if (v === 0) refetch() }} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
         <Tab label="Todas as Turmas" />
         <Tab
           label={
